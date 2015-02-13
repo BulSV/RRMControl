@@ -63,6 +63,7 @@ class Dialog : public QDialog
     IProtocol *itsProtocol;
 
     QStringList itsSensorsList;
+    QStringList itsDPList;
 
     // цвет индикации температуры >0 & <=0
     void setColorLCD(QLCDNumber *lcd, bool isHeat);
@@ -87,7 +88,8 @@ private slots:
     void colorIsTx();
     void colorIsRx();
     // display current Rx data
-    void display();
+    void displayTemp();
+    void displayDP();
 public:
     explicit Dialog(QWidget *parent = 0);
     ~Dialog();

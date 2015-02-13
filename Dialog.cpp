@@ -201,12 +201,15 @@ Dialog::Dialog(QWidget *parent) :
     QList<QLCDNumber*> list;
     list << lcdDP1 << lcdDP2 << lcdSensorTemp;
     foreach(QLCDNumber *lcd, list) {
-        lcd->setMinimumSize(80, 40);
-        lcd->setMaximumSize(80, 40);
-        lcd->setDigitCount(6);
+        lcd->setMinimumSize(80, 25);
+        lcd->setMaximumSize(80, 25);
         lcd->setSegmentStyle(QLCDNumber::Flat);
         lcd->setFrameStyle(QFrame::NoFrame);
     }
+
+    lcdDP1->setDigitCount(3);
+    lcdDP2->setDigitCount(3);
+    lcdSensorTemp->setDigitCount(6);
 
     connect(bPortStart, SIGNAL(clicked()), this, SLOT(openPort()));
     connect(bPortStop, SIGNAL(clicked()), this, SLOT(closePort()));
@@ -218,7 +221,8 @@ Dialog::Dialog(QWidget *parent) :
     connect(itsBlinkTimeRxColor, SIGNAL(timeout()), this, SLOT(colorIsRx()));
     connect(itsBlinkTimeTxNone, SIGNAL(timeout()), this, SLOT(colorTxNone()));
     connect(itsBlinkTimeRxNone, SIGNAL(timeout()), this, SLOT(colorRxNone()));
-    connect(itsTimeToDisplay, SIGNAL(timeout()), this, SLOT(display()));
+    connect(itsTimeToDisplay, SIGNAL(timeout()), this, SLOT(displayTemp()));
+    connect(itsTimeToDisplay, SIGNAL(timeout()), this, SLOT(displayDP()));
 
     connect(sbSetTemp, SIGNAL(downButtonReleased()), this, SLOT(writeTemp()));
     connect(sbSetTemp, SIGNAL(upButtonReleased()), this, SLOT(writeTemp()));
@@ -399,15 +403,15 @@ void Dialog::colorIsTx()
     itsBlinkTimeTxNone->start();
 }
 
-void Dialog::display()
+void Dialog::displayTemp()
 {
     itsTimeToDisplay->stop();
 
     QList<QLCDNumber*> list;
-    list << lcdDP1 << lcdDP2 << lcdSensorTemp;
+    list << lcdSensorTemp;
     QString tempStr;
 
-    for(int k = 0; k < list.size(); ++k) {
+    for(int k = 0; k < list.size() && k < itsSensorsList.size(); ++k) {
         tempStr = itsSensorsList.at(itsSensorsList.size() - 1 - k);
 
         if(list.at(k)->digitCount() < addTrailingZeros(tempStr, PRECISION).size())
@@ -419,10 +423,36 @@ void Dialog::display()
 
         setColorLCD(list[k], tempStr.toDouble() > 0.0);
 #ifdef DEBUG
-        qDebug() << "itsTempSensorsList.size() =" << itsSensorsList.size();
+        qDebug() << "itsSensorsList.size() =" << itsSensorsList.size();
         qDebug() << "Temperature[" << k << "] =" << list.at(k)->value();
 #endif
     }
 
     itsSensorsList.clear();
+}
+
+void Dialog::displayDP()
+{
+    itsTimeToDisplay->stop();
+
+    QList<QLCDNumber*> list;
+    list << lcdDP1 << lcdDP2;
+    QString tempStr;
+
+    for(int k = 0; k < list.size() && k < itsDPList.size(); ++k) {
+        tempStr = itsDPList.at(itsDPList.size() - 1 - k);
+
+        if(list.at(k)->digitCount() < tempStr.size())
+        {
+            list[k]->display("ERR"); // Overflow
+        } else {
+            list[k]->display(tempStr);
+        }
+#ifdef DEBUG
+        qDebug() << "itsDPList.size() =" << itsDPList.size();
+        qDebug() << "DP[" << k << "] =" << list.at(k)->value();
+#endif
+    }
+
+    itsDPList.clear();
 }
