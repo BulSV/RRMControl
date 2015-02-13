@@ -34,17 +34,29 @@ class Dialog : public QDialog
     QLabel *lTx;
     QLabel *lRx;
 
+    SpinBox *sbSetDP1;
+    SpinBox *sbSetDP2;
     SpinBox *sbSetTemp;
-    QLCDNumber *lcdSensor1Termo;
-    QLCDNumber *lcdSensor2Termo;
 
-    QLabel *lSensor1;
-    QLabel *lSensor2;
+    QLCDNumber *lcdDP1;
+    QLCDNumber *lcdDP2;
+    QLCDNumber *lcdSensorTemp;
 
+    QLabel *lDP1;
+    QLabel *lDP2;
+    QLabel *lSensor;
+
+    QPushButton *bSetDP1;
+    QPushButton *bSetDP2;
     QPushButton *bSetTemp;
 
+    QGroupBox *gbSetDP1;
+    QGroupBox *gbSetDP2;
     QGroupBox *gbSetTemp;
-    QGroupBox *gbSensors;
+    QGroupBox *gbConfig;
+    QGroupBox *gbInfo;
+
+    QPushButton *bWrite;
 
     QSerialPort *itsPort;
     ComPort *itsComPort;

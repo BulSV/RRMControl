@@ -38,6 +38,9 @@
 #define TEMPRANGE_MAX 50 // degrees Celsius
 #define NORMAL_TEMP 35 // degrees Celsius
 
+#define DPRANGE_MIN 0
+#define DPRANGE_MAX 1024
+
 Dialog::Dialog(QWidget *parent) :
         QDialog(parent),
         lPort(new QLabel(QString::fromUtf8("Port"), this)),
@@ -48,15 +51,27 @@ Dialog::Dialog(QWidget *parent) :
         bPortStop(new QPushButton(QString::fromUtf8("Stop"), this)),
         lTx(new QLabel("  Tx  ", this)),
         lRx(new QLabel("  Rx  ", this)),
+        sbSetDP1(new SpinBox(QIcon(":/Resources/left.png"), QIcon(":/Resources/right.png"),
+                              QString::fromUtf8(""), QString::fromUtf8(""), REWINDTIME, this)),
+        sbSetDP2(new SpinBox(QIcon(":/Resources/left.png"), QIcon(":/Resources/right.png"),
+                              QString::fromUtf8(""), QString::fromUtf8(""), REWINDTIME, this)),
         sbSetTemp(new SpinBox(QIcon(":/Resources/left.png"), QIcon(":/Resources/right.png"),
                               QString::fromUtf8(""), QString::fromUtf8(""), REWINDTIME, this)),
-        lcdSensor1Termo(new QLCDNumber(this)),
-        lcdSensor2Termo(new QLCDNumber(this)),
-        lSensor1(new QLabel(QString::fromUtf8("Sensor 1:"), this)),
-        lSensor2(new QLabel(QString::fromUtf8("Sensor 2:"), this)),
+        lcdDP1(new QLCDNumber(this)),
+        lcdDP2(new QLCDNumber(this)),
+        lcdSensorTemp(new QLCDNumber(this)),
+        lDP1(new QLabel(QString::fromUtf8("DP 1:"), this)),
+        lDP2(new QLabel(QString::fromUtf8("DP 2:"), this)),
+        lSensor(new QLabel(QString::fromUtf8("Sensor:"), this)),
+        bSetDP1(new QPushButton(QString::fromUtf8("Set"), this)),
+        bSetDP2(new QPushButton(QString::fromUtf8("Set"), this)),
         bSetTemp(new QPushButton(QString::fromUtf8("Set"), this)),
+        gbSetDP1(new QGroupBox(QString::fromUtf8("DP 1"), this)),
+        gbSetDP2(new QGroupBox(QString::fromUtf8("DP 2"), this)),
         gbSetTemp(new QGroupBox(QString::fromUtf8("Temperature"), this)),
-        gbSensors(new QGroupBox(QString::fromUtf8("Info"), this)),
+        gbConfig(new QGroupBox(QString::fromUtf8("Configure"), this)),
+        gbInfo(new QGroupBox(QString::fromUtf8("Info"), this)),
+        bWrite(new QPushButton(QString::fromUtf8("Write"), this)),
         itsPort(new QSerialPort(this)),
         itsComPort(new ComPort(itsPort, STARTBYTE, STOPBYTE, BYTESLENTH, this)),
         itsProtocol(new RRMProtocol(itsComPort, this)),
@@ -79,20 +94,48 @@ Dialog::Dialog(QWidget *parent) :
     lRx->setAlignment(Qt::AlignCenter);
     lRx->setMargin(2);
 
+    QGridLayout *gridDP1 = new QGridLayout;
+    gridDP1->addWidget(sbSetDP1, 0, 0, 1, 2);
+    gridDP1->addWidget(bSetDP1, 1, 0, 1, 2);
+
+    QGridLayout *gridDP2 = new QGridLayout;
+    gridDP2->addWidget(sbSetDP2, 0, 0, 1, 2);
+    gridDP2->addWidget(bSetDP2, 1, 0, 1, 2);
+
     QGridLayout *gridTemp = new QGridLayout;
-    gridTemp->addWidget(sbSetTemp, 0, 0, 1, 3);
-    gridTemp->addWidget(bSetTemp, 1, 1);
+    gridTemp->addWidget(sbSetTemp, 0, 0, 1, 2);
+    gridTemp->addWidget(bSetTemp, 1, 0, 1, 2);
+
+    gbSetDP1->setLayout(gridDP1);
+    gbSetDP2->setLayout(gridDP2);
+    gbSetTemp->setLayout(gridTemp);
+
+    QGridLayout *gridConfig = new QGridLayout;
+    gridConfig->addWidget(gbSetDP1, 0, 0, 3, 2);
+    gridConfig->addWidget(gbSetDP2, 0, 3, 3, 2);
+    gridConfig->addWidget(gbSetTemp, 0, 5, 3, 2);
+    gridConfig->addWidget(bWrite, 3, 5, 1, 2);
+
+    gbConfig->setLayout(gridConfig);
+
+    QFrame *verticalLine1 = new QFrame(this);
+    verticalLine1->setFrameStyle(QFrame::VLine);
+
+    QFrame *verticalLine2 = new QFrame(this);
+    verticalLine2->setFrameStyle(QFrame::VLine);
 
     QGridLayout *gridInfo = new QGridLayout;
-    gridInfo->addWidget(lSensor1, 0, 0);
-    gridInfo->addWidget(lcdSensor1Termo, 0, 1);
-    gridInfo->addWidget(lSensor2, 1, 0);
-    gridInfo->addWidget(lcdSensor2Termo, 1, 1);
-    gridInfo->addItem(new QSpacerItem(bSetTemp->width(), bSetTemp->height()), 2, 0, 2, 2);
+    gridInfo->addWidget(lDP1, 0, 0);
+    gridInfo->addWidget(lcdDP1, 0, 1);
+    gridInfo->addWidget(verticalLine1, 0, 2);
+    gridInfo->addWidget(lDP2, 0, 3);
+    gridInfo->addWidget(lcdDP2, 0, 4);
+    gridInfo->addWidget(verticalLine2, 0, 5);
+    gridInfo->addWidget(lSensor, 0, 6);
+    gridInfo->addWidget(lcdSensorTemp, 0, 7);
     gridInfo->setSpacing(5);
 
-    gbSetTemp->setLayout(gridTemp);
-    gbSensors->setLayout(gridInfo);
+    gbInfo->setLayout(gridInfo);
 
     QGridLayout *grid = new QGridLayout;
     grid->addWidget(lPort, 0, 0);
@@ -105,11 +148,11 @@ Dialog::Dialog(QWidget *parent) :
     grid->addWidget(bPortStop, 2, 2);
     grid->addWidget(lTx, 2, 3);
     grid->addWidget(lRx, 2, 4);
-    grid->addWidget(gbSetTemp, 3, 0, 1, 2);
-    grid->addWidget(gbSensors, 3, 2, 1, 3);
     grid->setSpacing(5);
 
     layout()->addItem(grid);
+    layout()->addWidget(gbConfig);
+    layout()->addWidget(gbInfo);
     layout()->addWidget(itsStatusBar);
     layout()->setSpacing(5);
 
@@ -144,11 +187,12 @@ Dialog::Dialog(QWidget *parent) :
     itsBlinkTimeRxColor->setInterval(BLINKTIMERX);
     itsTimeToDisplay->setInterval(DISPLAYTIME);
 
+    sbSetDP1->setRange(DPRANGE_MIN, DPRANGE_MAX);
     sbSetTemp->setRange(TEMPRANGE_MIN, TEMPRANGE_MAX);
     sbSetTemp->setValue(NORMAL_TEMP);
 
     QList<QLCDNumber*> list;
-    list << lcdSensor1Termo << lcdSensor2Termo;
+    list << lcdDP1 << lcdDP2 << lcdSensorTemp;
     foreach(QLCDNumber *lcd, list) {
         lcd->setMinimumSize(80, 40);
         lcd->setMaximumSize(80, 40);
@@ -353,7 +397,7 @@ void Dialog::display()
     itsTimeToDisplay->stop();
 
     QList<QLCDNumber*> list;
-    list << lcdSensor2Termo << lcdSensor1Termo;
+    list << lcdDP1 << lcdDP2 << lcdSensorTemp;
     QString tempStr;
 
     for(int k = 0; k < list.size(); ++k) {
@@ -369,7 +413,7 @@ void Dialog::display()
         setColorLCD(list[k], tempStr.toDouble() > 0.0);
 #ifdef DEBUG
         qDebug() << "itsTempSensorsList.size() =" << itsSensorsList.size();
-        qDebug() << "Temperature[" << k << "] =" << list.at(k)->value();
+//        qDebug() << "Temperature[" << k << "] =" << list.at(k)->value();
 #endif
     }
 
