@@ -70,7 +70,7 @@ Dialog::Dialog(QWidget *parent) :
         gbSetDP2(new QGroupBox(QString::fromUtf8("DP 2"), this)),
         gbSetTemp(new QGroupBox(QString::fromUtf8("Temperature"), this)),
         gbConfig(new QGroupBox(QString::fromUtf8("Configure"), this)),
-        gbInfo(new QGroupBox(QString::fromUtf8("Info"), this)),
+        gbInfo(new QGroupBox(QString::fromUtf8("Information"), this)),
         bWrite(new QPushButton(QString::fromUtf8("Write"), this)),
         itsPort(new QSerialPort(this)),
         itsComPort(new ComPort(itsPort, STARTBYTE, STOPBYTE, BYTESLENTH, this)),
@@ -118,21 +118,28 @@ Dialog::Dialog(QWidget *parent) :
 
     gbConfig->setLayout(gridConfig);
 
-    QFrame *verticalLine1 = new QFrame(this);
-    verticalLine1->setFrameStyle(QFrame::VLine);
+    QFrame *frame1 = new QFrame(this);
+    frame1->setFrameStyle(QFrame::Box | QFrame::Raised);
+    lDP1->setMargin(5);
 
-    QFrame *verticalLine2 = new QFrame(this);
-    verticalLine2->setFrameStyle(QFrame::VLine);
+    QFrame *frame2 = new QFrame(this);
+    frame2->setFrameStyle(QFrame::Box | QFrame::Raised);
+    lDP2->setMargin(5);
+
+    QFrame *frame3 = new QFrame(this);
+    frame3->setFrameStyle(QFrame::Box | QFrame::Raised);
+    lSensor->setMargin(5);
 
     QGridLayout *gridInfo = new QGridLayout;
     gridInfo->addWidget(lDP1, 0, 0);
     gridInfo->addWidget(lcdDP1, 0, 1);
-    gridInfo->addWidget(verticalLine1, 0, 2);
+    gridInfo->addWidget(frame1, 0, 0, 1, 2);
     gridInfo->addWidget(lDP2, 0, 3);
     gridInfo->addWidget(lcdDP2, 0, 4);
-    gridInfo->addWidget(verticalLine2, 0, 5);
+    gridInfo->addWidget(frame2, 0, 3, 1, 2);
     gridInfo->addWidget(lSensor, 0, 6);
     gridInfo->addWidget(lcdSensorTemp, 0, 7);
+    gridInfo->addWidget(frame3, 0, 6, 1, 2);
     gridInfo->setSpacing(5);
 
     gbInfo->setLayout(gridInfo);
@@ -143,11 +150,11 @@ Dialog::Dialog(QWidget *parent) :
     grid->addWidget(lBaud, 1, 0);
     grid->addWidget(cbBaud, 1, 1);
     // пещаю логотип фирмы
-    grid->addWidget(new QLabel("<img src=':/Resources/elisat.png' height='40' width='150'/>", this), 0, 2, 2, 5);
+    grid->addWidget(new QLabel("<img src=':/Resources/elisat.png' height='40' width='150'/>", this), 0, 3, 2, 5, Qt::AlignRight);
     grid->addWidget(bPortStart, 2, 1);
     grid->addWidget(bPortStop, 2, 2);
-    grid->addWidget(lTx, 2, 3);
-    grid->addWidget(lRx, 2, 4);
+    grid->addWidget(lTx, 2, 6, Qt::AlignRight);
+    grid->addWidget(lRx, 2, 7, Qt::AlignRight);
     grid->setSpacing(5);
 
     layout()->addItem(grid);
@@ -413,7 +420,7 @@ void Dialog::display()
         setColorLCD(list[k], tempStr.toDouble() > 0.0);
 #ifdef DEBUG
         qDebug() << "itsTempSensorsList.size() =" << itsSensorsList.size();
-//        qDebug() << "Temperature[" << k << "] =" << list.at(k)->value();
+        qDebug() << "Temperature[" << k << "] =" << list.at(k)->value();
 #endif
     }
 
