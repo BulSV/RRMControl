@@ -25,11 +25,9 @@ RRMProtocol::RRMProtocol(ComPort *comPort, QObject *parent) :
     IProtocol(parent),
     itsComPort(comPort),
     itsPrevCPUTemp(0.0),
-    itsPrevSensor1Temp(0.0),
-    itsPrevSensor2Temp(0.0),
+    itsPrevSensorTemp(0.0),
     itsWasPrevCPUTemp(false),
-    itsWasPrevSensor1Temp(false),
-    itsWasPrevSensor2Temp(false)
+    itsWasPrevSensorTemp(false)
 {
     connect(itsComPort, SIGNAL(DataIsReaded(bool)), this, SLOT(readData(bool)));
 }
@@ -54,10 +52,8 @@ void RRMProtocol::readData(bool isReaded)
         ba = itsComPort->getReadData();
 
         itsReadData.insert(QString("CODE"), QString(ba.at(1)));
-        itsReadData.insert(QString("SENS1"),
-                           QString::number(tempCorr(tempSensors(wordToInt(ba.mid(2, 2))), SENSOR1), FORMAT, PRECISION));
-        itsReadData.insert(QString("SENS2"),
-                           QString::number(tempCorr(tempSensors(wordToInt(ba.mid(4, 2))), SENSOR2), FORMAT, PRECISION));
+        itsReadData.insert(QString("DATA"),
+                           QString::number(tempCorr(tempSensors(wordToInt(ba.mid(2, 2))), SENSOR), FORMAT, PRECISION));
 
         emit DataIsReaded(true);
     } else {
@@ -71,8 +67,8 @@ void RRMProtocol::writeData()
 
     ba.append(STARTBYTE);
     ba.append(itsWriteData.value("CODE").toInt());
-    ba.append(intToByteArray(itsWriteData.value("TEMP").toInt(), 2).at(0));
-    ba.append(intToByteArray(itsWriteData.value("TEMP").toInt(), 2).at(1));
+    ba.append(intToByteArray(itsWriteData.value("DATA").toInt(), 2).at(0));
+    ba.append(intToByteArray(itsWriteData.value("DATA").toInt(), 2).at(1));
     ba.append('\0');
     ba.append('\0');
     ba.append('\0');
@@ -90,8 +86,7 @@ void RRMProtocol::writeData()
 void RRMProtocol::resetProtocol()
 {
     itsWasPrevCPUTemp = false;
-    itsWasPrevSensor1Temp = false;
-    itsWasPrevSensor2Temp = false;
+    itsWasPrevSensorTemp = false;
 }
 
 // преобразует word в byte
@@ -147,14 +142,10 @@ float RRMProtocol::tempCorr(float temp, RRMProtocol::SENSORS sensor)
         prevValue = itsPrevCPUTemp;
         wasPrev = itsWasPrevCPUTemp;
         break;
-    case SENSOR1:
-        prevValue = itsPrevSensor1Temp;
-        wasPrev = itsWasPrevSensor1Temp;
-        break;
-    case SENSOR2:
-        prevValue = itsPrevSensor2Temp;
-        wasPrev = itsWasPrevSensor2Temp;
-        break;
+    case SENSOR:
+        prevValue = itsPrevSensorTemp;
+        wasPrev = itsWasPrevSensorTemp;
+        break;    
     default:
         prevValue = itsPrevCPUTemp;
         wasPrev = itsWasPrevCPUTemp;
@@ -172,14 +163,10 @@ float RRMProtocol::tempCorr(float temp, RRMProtocol::SENSORS sensor)
         itsPrevCPUTemp = prevValue;
         itsWasPrevCPUTemp = true;
         break;
-    case SENSOR1:
-        itsPrevSensor1Temp = prevValue;
-        itsWasPrevSensor1Temp = true;
-        break;
-    case SENSOR2:
-        itsPrevSensor2Temp = prevValue;
-        itsWasPrevSensor2Temp = true;
-        break;
+    case SENSOR:
+        itsPrevSensorTemp = prevValue;
+        itsWasPrevSensorTemp = true;
+        break;    
     default:
         itsPrevCPUTemp = prevValue;
         itsWasPrevCPUTemp = true;
@@ -195,12 +182,9 @@ QString RRMProtocol::sensorToString(RRMProtocol::SENSORS sensor)
     case CPU:
         return "CPU";
         break;
-    case SENSOR1:
-        return "SENS1";
-        break;
-    case SENSOR2:
-        return "SENS2";
-        break;
+    case SENSOR:
+        return "SENS";
+        break;    
     default:
         return "CPU";
         break;

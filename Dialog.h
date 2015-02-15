@@ -25,6 +25,13 @@ class Dialog : public QDialog
 {
     Q_OBJECT
 
+    enum CODE {
+        TEMP,
+        DP1,
+        DP2,
+        WRITE
+    };
+
     QLabel *lPort;
     QComboBox *cbPort;
     QLabel *lBaud;
@@ -70,6 +77,8 @@ class Dialog : public QDialog
     // добавляет завершающие нули
     QString &addTrailingZeros(QString &str, int prec);
 
+    void write(const CODE &code);
+
     QStatusBar *itsStatusBar;
     QTimer *itsBlinkTimeTxNone;
     QTimer *itsBlinkTimeRxNone;
@@ -81,7 +90,10 @@ private slots:
     void openPort();
     void closePort();
     void received(bool isReceived);
+    void writeDP1();
+    void writeDP2();
     void writeTemp();
+    void writePermanently();
     // мигание надписей "Rx" - при получении и "Tx" - при отправке пакета
     void colorTxNone();
     void colorRxNone();

@@ -41,6 +41,11 @@
 #define DPRANGE_MIN 0
 #define DPRANGE_MAX 1024
 
+#define CODE_TEMP "0"
+#define CODE_DP1 "1"
+#define CODE_DP2 "2"
+#define CODE_WRITE "3"
+
 Dialog::Dialog(QWidget *parent) :
         QDialog(parent),
         lPort(new QLabel(QString::fromUtf8("Port"), this)),
@@ -227,6 +232,14 @@ Dialog::Dialog(QWidget *parent) :
     connect(sbSetTemp, SIGNAL(downButtonReleased()), this, SLOT(writeTemp()));
     connect(sbSetTemp, SIGNAL(upButtonReleased()), this, SLOT(writeTemp()));
 
+    connect(sbSetDP1, SIGNAL(downButtonReleased()), this, SLOT(writeDP1()));
+    connect(sbSetDP1, SIGNAL(upButtonReleased()), this, SLOT(writeDP2()));
+
+    connect(sbSetDP2, SIGNAL(downButtonReleased()), this, SLOT(writeDP2()));
+    connect(sbSetDP2, SIGNAL(upButtonReleased()), this, SLOT(writeDP2()));
+
+    connect(bWrite, SIGNAL(clicked()), this, SLOT(writePermanently()));
+
     QShortcut *aboutShortcut = new QShortcut(QKeySequence("F1"), this);
     connect(aboutShortcut, SIGNAL(activated()), qApp, SLOT(aboutQt()));
 }
@@ -310,14 +323,19 @@ void Dialog::received(bool isReceived)
 
         QList<QString> strKeysList = itsProtocol->getReadedData().keys();
         for(int i = 0; i < itsProtocol->getReadedData().size(); ++i) {
-            if(strKeysList.at(i) != "CODE") {
+            if(strKeysList.at(i) == "CODE"
+                    && itsProtocol->getReadedData().value(strKeysList.at(i)) == CODE_TEMP) {
                 itsSensorsList.append(itsProtocol->getReadedData().value(strKeysList.at(i)));
+            } else if(strKeysList.at(i) == "CODE"
+                      && ((itsProtocol->getReadedData().value(strKeysList.at(i)) == CODE_DP1)
+                          || (itsProtocol->getReadedData().value(strKeysList.at(i)) == CODE_DP2))) {
+                itsDPList.append(itsProtocol->getReadedData().value(strKeysList.at(i)));
             }
         }
     }
 }
 
-void Dialog::writeTemp()
+void Dialog::write(const Dialog::CODE &code)
 {
     if(itsPort->isOpen()) {
         QMultiMap<QString, QString> dataTemp;
@@ -327,11 +345,50 @@ void Dialog::writeTemp()
             lTx->setStyleSheet("background: green; font: bold; font-size: 10pt");
         }
 
-        dataTemp.insert("CODE", "0");
-        dataTemp.insert("TEMP", QString::number(sbSetTemp->value()));
+        QString codeStr;
+
+        switch (code) {
+        case 0:
+            codeStr = CODE_TEMP;
+            break;
+        case 1:
+            codeStr = CODE_DP1;
+            break;
+        case 2:
+            codeStr = CODE_DP2;
+            break;
+        case 3:
+            codeStr = CODE_WRITE;
+            break;
+        default:
+            codeStr = CODE_TEMP;
+            break;
+        }
+        dataTemp.insert("CODE", codeStr);
+        dataTemp.insert("DATA", QString::number(sbSetTemp->value()));
         itsProtocol->setDataToWrite(dataTemp);
         itsProtocol->writeData();
     }
+}
+
+void Dialog::writeDP1()
+{
+    write(DP1);
+}
+
+void Dialog::writeDP2()
+{
+    write(DP2);
+}
+
+void Dialog::writeTemp()
+{
+    write(TEMP);
+}
+
+void Dialog::writePermanently()
+{
+    write(WRITE);
 }
 
 void Dialog::colorTxNone()

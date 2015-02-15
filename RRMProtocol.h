@@ -25,16 +25,14 @@ private:
     QMultiMap<QString, QString> itsReadData;
 
     float itsPrevCPUTemp;
-    float itsPrevSensor1Temp;
-    float itsPrevSensor2Temp;
+    float itsPrevSensorTemp;
 
     bool itsWasPrevCPUTemp;
-    bool itsWasPrevSensor1Temp;
-    bool itsWasPrevSensor2Temp;
+    bool itsWasPrevSensorTemp;
 
     // датчики температуры
     enum SENSORS {
-        CPU, SENSOR1, SENSOR2
+        CPU, SENSOR
     };
 
     // преобразует word в byte
