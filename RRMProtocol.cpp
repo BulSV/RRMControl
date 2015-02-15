@@ -50,10 +50,25 @@ void RRMProtocol::readData(bool isReaded)
         QByteArray ba;
 
         ba = itsComPort->getReadData();
-
+#ifdef DEBUG
+        qDebug() << "read";
+    for(int i = 0; i < ba.size(); ++i) {
+        qDebug() << "ba =" << (int)ba.at(i);
+    }
+#endif
         itsReadData.insert(QString("CODE"), QString(ba.at(1)));
-        itsReadData.insert(QString("DATA"),
-                           QString::number(tempCorr(tempSensors(wordToInt(ba.mid(2, 2))), SENSOR), FORMAT, PRECISION));
+        if(ba.at(1) == '\0') {
+            itsReadData.insert(QString("DATA"),
+                               QString::number(tempCorr(tempSensors(wordToInt(ba.mid(2, 2))), SENSOR), FORMAT, PRECISION));
+#ifdef DEBUG
+            qDebug() << "Reading temperature";
+#endif
+        } else {
+#ifdef DEBUG
+            qDebug() << "Reading DPs";
+#endif
+            itsReadData.insert(QString("DATA"), QString::number(wordToInt(ba.mid(2, 2))));
+        }
 
         emit DataIsReaded(true);
     } else {
@@ -76,6 +91,7 @@ void RRMProtocol::writeData()
 
     itsComPort->setWriteData(ba);
 #ifdef DEBUG
+    qDebug() << "write";
     for(int i = 0; i < ba.size(); ++i) {
         qDebug() << "ba =" << (int)ba.at(i);
     }

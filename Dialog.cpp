@@ -46,6 +46,8 @@
 #define CODE_DP2 "2"
 #define CODE_WRITE "3"
 
+#define NONE_DATA "0"
+
 Dialog::Dialog(QWidget *parent) :
         QDialog(parent),
         lPort(new QLabel(QString::fromUtf8("Port"), this)),
@@ -218,25 +220,31 @@ Dialog::Dialog(QWidget *parent) :
 
     connect(bPortStart, SIGNAL(clicked()), this, SLOT(openPort()));
     connect(bPortStop, SIGNAL(clicked()), this, SLOT(closePort()));
+
     connect(cbPort, SIGNAL(currentIndexChanged(int)), this, SLOT(closePort()));
     connect(cbBaud, SIGNAL(currentIndexChanged(int)), this, SLOT(closePort()));
+
     connect(itsProtocol, SIGNAL(DataIsReaded(bool)), this, SLOT(received(bool)));
-    connect(bSetTemp, SIGNAL(clicked()), this, SLOT(writeTemp()));
+
     connect(itsBlinkTimeTxColor, SIGNAL(timeout()), this, SLOT(colorIsTx()));
     connect(itsBlinkTimeRxColor, SIGNAL(timeout()), this, SLOT(colorIsRx()));
     connect(itsBlinkTimeTxNone, SIGNAL(timeout()), this, SLOT(colorTxNone()));
     connect(itsBlinkTimeRxNone, SIGNAL(timeout()), this, SLOT(colorRxNone()));
+
     connect(itsTimeToDisplay, SIGNAL(timeout()), this, SLOT(displayTemp()));
     connect(itsTimeToDisplay, SIGNAL(timeout()), this, SLOT(displayDP()));
 
     connect(sbSetTemp, SIGNAL(downButtonReleased()), this, SLOT(writeTemp()));
     connect(sbSetTemp, SIGNAL(upButtonReleased()), this, SLOT(writeTemp()));
+    connect(bSetTemp, SIGNAL(clicked()), this, SLOT(writeTemp()));
 
     connect(sbSetDP1, SIGNAL(downButtonReleased()), this, SLOT(writeDP1()));
-    connect(sbSetDP1, SIGNAL(upButtonReleased()), this, SLOT(writeDP2()));
+    connect(sbSetDP1, SIGNAL(upButtonReleased()), this, SLOT(writeDP1()));
+    connect(bSetDP1, SIGNAL(clicked()), this, SLOT(writeDP1()));
 
     connect(sbSetDP2, SIGNAL(downButtonReleased()), this, SLOT(writeDP2()));
     connect(sbSetDP2, SIGNAL(upButtonReleased()), this, SLOT(writeDP2()));
+    connect(bSetDP2, SIGNAL(clicked()), this, SLOT(writeDP2()));
 
     connect(bWrite, SIGNAL(clicked()), this, SLOT(writePermanently()));
 
@@ -323,12 +331,12 @@ void Dialog::received(bool isReceived)
 
         QList<QString> strKeysList = itsProtocol->getReadedData().keys();
         for(int i = 0; i < itsProtocol->getReadedData().size(); ++i) {
-            if(strKeysList.at(i) == "CODE"
-                    && itsProtocol->getReadedData().value(strKeysList.at(i)) == CODE_TEMP) {
+            if(strKeysList.at(i) == QString("CODE")
+                    && itsProtocol->getReadedData().value(strKeysList.at(i)) == QString(CODE_TEMP)) {
                 itsSensorsList.append(itsProtocol->getReadedData().value(strKeysList.at(i)));
-            } else if(strKeysList.at(i) == "CODE"
-                      && ((itsProtocol->getReadedData().value(strKeysList.at(i)) == CODE_DP1)
-                          || (itsProtocol->getReadedData().value(strKeysList.at(i)) == CODE_DP2))) {
+            } else if(strKeysList.at(i) == QString("CODE")
+                      && ((itsProtocol->getReadedData().value(strKeysList.at(i)) == QString(CODE_DP1))
+                          || (itsProtocol->getReadedData().value(strKeysList.at(i)) == QString(CODE_DP2)))) {
                 itsDPList.append(itsProtocol->getReadedData().value(strKeysList.at(i)));
             }
         }
@@ -346,26 +354,31 @@ void Dialog::write(const Dialog::CODE &code)
         }
 
         QString codeStr;
+        QString data;
 
-        switch (code) {
+        switch (static_cast<int>(code)) {
         case 0:
             codeStr = CODE_TEMP;
+            data = QString::number(sbSetTemp->value());
             break;
         case 1:
             codeStr = CODE_DP1;
+            data = QString::number(sbSetDP1->value());
             break;
         case 2:
             codeStr = CODE_DP2;
+            data = QString::number(sbSetDP2->value());
             break;
         case 3:
             codeStr = CODE_WRITE;
+            data = NONE_DATA;
             break;
         default:
             codeStr = CODE_TEMP;
             break;
         }
         dataTemp.insert("CODE", codeStr);
-        dataTemp.insert("DATA", QString::number(sbSetTemp->value()));
+        dataTemp.insert("DATA", data);
         itsProtocol->setDataToWrite(dataTemp);
         itsProtocol->writeData();
     }
@@ -462,12 +475,17 @@ void Dialog::colorIsTx()
 
 void Dialog::displayTemp()
 {
+#ifdef DEBUG
+    qDebug() << "void Dialog::displayTemp()";
+#endif
     itsTimeToDisplay->stop();
 
     QList<QLCDNumber*> list;
     list << lcdSensorTemp;
     QString tempStr;
-
+#ifdef DEBUG
+        qDebug() << "itsSensorsList.size() =" << itsSensorsList.size();
+#endif
     for(int k = 0; k < list.size() && k < itsSensorsList.size(); ++k) {
         tempStr = itsSensorsList.at(itsSensorsList.size() - 1 - k);
 
@@ -490,12 +508,17 @@ void Dialog::displayTemp()
 
 void Dialog::displayDP()
 {
+#ifdef DEBUG
+    qDebug() << "void Dialog::displayDP()";
+#endif
     itsTimeToDisplay->stop();
 
     QList<QLCDNumber*> list;
     list << lcdDP1 << lcdDP2;
     QString tempStr;
-
+#ifdef DEBUG
+        qDebug() << "itsDPList.size() =" << itsDPList.size();
+#endif
     for(int k = 0; k < list.size() && k < itsDPList.size(); ++k) {
         tempStr = itsDPList.at(itsDPList.size() - 1 - k);
 
