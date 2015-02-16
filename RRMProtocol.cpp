@@ -51,26 +51,30 @@ void RRMProtocol::readData(bool isReaded)
 
         ba = itsComPort->getReadData();
 #ifdef DEBUG
-        qDebug() << "read";
+        qDebug() << "read: " << QString::number(static_cast<int>(ba.at(1)));
     for(int i = 0; i < ba.size(); ++i) {
         qDebug() << "ba =" << (int)ba.at(i);
     }
 #endif
-        itsReadData.insert(QString("CODE"), QString(ba.at(1)));
+        itsReadData.insert(QString("CODE"), QString::number(static_cast<int>(ba.at(1))));
         if(ba.at(1) == '\0') {
             itsReadData.insert(QString("DATA"),
                                QString::number(tempCorr(tempSensors(wordToInt(ba.mid(2, 2))), SENSOR), FORMAT, PRECISION));
+
+            emit DataIsReaded(true);
 #ifdef DEBUG
             qDebug() << "Reading temperature";
 #endif
-        } else {
+        } else if(ba.at(1) == '\1' || ba.at(1) == '\2'){
 #ifdef DEBUG
             qDebug() << "Reading DPs";
 #endif
             itsReadData.insert(QString("DATA"), QString::number(wordToInt(ba.mid(2, 2))));
-        }
 
-        emit DataIsReaded(true);
+            emit DataIsReaded(true);
+        } else {
+            emit DataIsReaded(false);
+        }
     } else {
         emit DataIsReaded(false);
     }
@@ -161,7 +165,7 @@ float RRMProtocol::tempCorr(float temp, RRMProtocol::SENSORS sensor)
     case SENSOR:
         prevValue = itsPrevSensorTemp;
         wasPrev = itsWasPrevSensorTemp;
-        break;    
+        break;
     default:
         prevValue = itsPrevCPUTemp;
         wasPrev = itsWasPrevCPUTemp;
@@ -182,7 +186,7 @@ float RRMProtocol::tempCorr(float temp, RRMProtocol::SENSORS sensor)
     case SENSOR:
         itsPrevSensorTemp = prevValue;
         itsWasPrevSensorTemp = true;
-        break;    
+        break;
     default:
         itsPrevCPUTemp = prevValue;
         itsWasPrevCPUTemp = true;
@@ -200,7 +204,7 @@ QString RRMProtocol::sensorToString(RRMProtocol::SENSORS sensor)
         break;
     case SENSOR:
         return "SENS";
-        break;    
+        break;
     default:
         return "CPU";
         break;

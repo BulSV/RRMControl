@@ -41,12 +41,12 @@
 #define DPRANGE_MIN 0
 #define DPRANGE_MAX 1024
 
-#define CODE_TEMP "0"
-#define CODE_DP1 "1"
-#define CODE_DP2 "2"
-#define CODE_WRITE "3"
+#define CODE_TEMP 0x00
+#define CODE_DP1 0x01
+#define CODE_DP2 0x02
+#define CODE_WRITE 0x03
 
-#define NONE_DATA "0"
+#define NONE_DATA 0x00
 
 Dialog::Dialog(QWidget *parent) :
         QDialog(parent),
@@ -332,12 +332,18 @@ void Dialog::received(bool isReceived)
         QList<QString> strKeysList = itsProtocol->getReadedData().keys();
         for(int i = 0; i < itsProtocol->getReadedData().size(); ++i) {
             if(strKeysList.at(i) == QString("CODE")
-                    && itsProtocol->getReadedData().value(strKeysList.at(i)) == QString(CODE_TEMP)) {
+                    && itsProtocol->getReadedData().value(strKeysList.at(i)) == QString::number(CODE_TEMP)) {
                 itsSensorsList.append(itsProtocol->getReadedData().value(strKeysList.at(i)));
+#ifdef DEBUG
+                qDebug() << "QString::number(CODE_TEMP):" << itsProtocol->getReadedData().value(strKeysList.at(i));
+#endif
             } else if(strKeysList.at(i) == QString("CODE")
-                      && ((itsProtocol->getReadedData().value(strKeysList.at(i)) == QString(CODE_DP1))
-                          || (itsProtocol->getReadedData().value(strKeysList.at(i)) == QString(CODE_DP2)))) {
+                      && ((itsProtocol->getReadedData().value(strKeysList.at(i)) == QString::number(CODE_DP1))
+                          || (itsProtocol->getReadedData().value(strKeysList.at(i)) == QString::number(CODE_DP2)))) {
                 itsDPList.append(itsProtocol->getReadedData().value(strKeysList.at(i)));
+#ifdef DEBUG
+                qDebug() << "QString::number(CODE_DPs):" << itsProtocol->getReadedData().value(strKeysList.at(i));
+#endif
             }
         }
     }
@@ -358,23 +364,23 @@ void Dialog::write(const Dialog::CODE &code)
 
         switch (static_cast<int>(code)) {
         case 0:
-            codeStr = CODE_TEMP;
+            codeStr = QString::number(CODE_TEMP);
             data = QString::number(sbSetTemp->value());
             break;
         case 1:
-            codeStr = CODE_DP1;
+            codeStr = QString::number(CODE_DP1);
             data = QString::number(sbSetDP1->value());
             break;
         case 2:
-            codeStr = CODE_DP2;
+            codeStr = QString::number(CODE_DP2);
             data = QString::number(sbSetDP2->value());
             break;
         case 3:
-            codeStr = CODE_WRITE;
-            data = NONE_DATA;
+            codeStr = QString::number(CODE_WRITE);
+            data = QString::number(NONE_DATA);
             break;
         default:
-            codeStr = CODE_TEMP;
+            codeStr = QString::number(CODE_TEMP);
             break;
         }
         dataTemp.insert("CODE", codeStr);
@@ -514,7 +520,7 @@ void Dialog::displayDP()
     itsTimeToDisplay->stop();
 
     QList<QLCDNumber*> list;
-    list << lcdDP1 << lcdDP2;
+    list << lcdDP2 << lcdDP1;
     QString tempStr;
 #ifdef DEBUG
         qDebug() << "itsDPList.size() =" << itsDPList.size();
