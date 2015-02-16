@@ -21,6 +21,12 @@
 #define FORMAT 'f'
 #define PRECISION 2
 
+#define CODE_TEMP 0x00
+#define CODE_DP1 0x01
+#define CODE_DP2 0x02
+
+#define NONE_DATA '\0'
+
 RRMProtocol::RRMProtocol(ComPort *comPort, QObject *parent) :
     IProtocol(parent),
     itsComPort(comPort),
@@ -57,7 +63,7 @@ void RRMProtocol::readData(bool isReaded)
     }
 #endif
         itsReadData.insert(QString("CODE"), QString::number(static_cast<int>(ba.at(1))));
-        if(ba.at(1) == '\0') {
+        if(static_cast<int>(ba.at(1)) == CODE_TEMP) {
             itsReadData.insert(QString("DATA"),
                                QString::number(tempCorr(tempSensors(wordToInt(ba.mid(2, 2))), SENSOR), FORMAT, PRECISION));
 
@@ -65,7 +71,7 @@ void RRMProtocol::readData(bool isReaded)
 #ifdef DEBUG
             qDebug() << "Reading temperature";
 #endif
-        } else if(ba.at(1) == '\1' || ba.at(1) == '\2'){
+        } else if(static_cast<int>(ba.at(1)) == CODE_DP1 || static_cast<int>(ba.at(1)) == CODE_DP2){
 #ifdef DEBUG
             qDebug() << "Reading DPs";
 #endif
@@ -88,9 +94,9 @@ void RRMProtocol::writeData()
     ba.append(itsWriteData.value("CODE").toInt());
     ba.append(intToByteArray(itsWriteData.value("DATA").toInt(), 2).at(0));
     ba.append(intToByteArray(itsWriteData.value("DATA").toInt(), 2).at(1));
-    ba.append('\0');
-    ba.append('\0');
-    ba.append('\0');
+    ba.append(NONE_DATA);
+    ba.append(NONE_DATA);
+    ba.append(NONE_DATA);
     ba.append(STOPBYTE);
 
     itsComPort->setWriteData(ba);
