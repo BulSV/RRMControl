@@ -41,6 +41,10 @@
 #define DPRANGE_MIN 0
 #define DPRANGE_MAX 1024
 
+#define DP1_DIGITS 4
+#define DP2_DIGITS 4
+#define TEMP_DIGITS 6
+
 #define CODE_TEMP 0x00
 #define CODE_DP1 0x01
 #define CODE_DP2 0x02
@@ -214,9 +218,9 @@ Dialog::Dialog(QWidget *parent) :
         lcd->setFrameStyle(QFrame::NoFrame);
     }
 
-    lcdDP1->setDigitCount(3);
-    lcdDP2->setDigitCount(3);
-    lcdSensorTemp->setDigitCount(6);
+    lcdDP1->setDigitCount(DP1_DIGITS);
+    lcdDP2->setDigitCount(DP2_DIGITS);
+    lcdSensorTemp->setDigitCount(TEMP_DIGITS);
 
     connect(bPortStart, SIGNAL(clicked()), this, SLOT(openPort()));
     connect(bPortStop, SIGNAL(clicked()), this, SLOT(closePort()));
