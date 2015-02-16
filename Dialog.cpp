@@ -333,19 +333,19 @@ void Dialog::received(bool isReceived)
         for(int i = 0; i < itsProtocol->getReadedData().size(); ++i) {
             if(strKeysList.at(i) == QString("CODE")
                     && itsProtocol->getReadedData().value(strKeysList.at(i)) == QString::number(CODE_TEMP)) {
-                itsSensorsList.append(itsProtocol->getReadedData().value(strKeysList.at(i)));
+                itsSensorsList.append(itsProtocol->getReadedData().value(strKeysList.at(i + 1)));
 #ifdef DEBUG
                 qDebug() << "QString::number(CODE_TEMP):" << itsProtocol->getReadedData().value(strKeysList.at(i));
 #endif
             } else if(strKeysList.at(i) == QString("CODE")
                       && (itsProtocol->getReadedData().value(strKeysList.at(i)) == QString::number(CODE_DP1))) {
-                itsDP1 = itsProtocol->getReadedData().value(strKeysList.at(i));
+                itsDP1 = itsProtocol->getReadedData().value(strKeysList.at(i + 1));
 #ifdef DEBUG
                 qDebug() << "QString::number(CODE_DP1):" << itsProtocol->getReadedData().value(strKeysList.at(i));
 #endif
             } else if(strKeysList.at(i) == QString("CODE")
                       && itsProtocol->getReadedData().value(strKeysList.at(i)) == QString::number(CODE_DP2)) {
-                itsDP2 = itsProtocol->getReadedData().value(strKeysList.at(i));
+                itsDP2 = itsProtocol->getReadedData().value(strKeysList.at(i + 1));
 #ifdef DEBUG
                 qDebug() << "QString::number(CODE_DP2):" << itsProtocol->getReadedData().value(strKeysList.at(i));
 #endif
