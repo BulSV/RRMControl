@@ -338,11 +338,16 @@ void Dialog::received(bool isReceived)
                 qDebug() << "QString::number(CODE_TEMP):" << itsProtocol->getReadedData().value(strKeysList.at(i));
 #endif
             } else if(strKeysList.at(i) == QString("CODE")
-                      && ((itsProtocol->getReadedData().value(strKeysList.at(i)) == QString::number(CODE_DP1))
-                          || (itsProtocol->getReadedData().value(strKeysList.at(i)) == QString::number(CODE_DP2)))) {
-                itsDPList.append(itsProtocol->getReadedData().value(strKeysList.at(i)));
+                      && (itsProtocol->getReadedData().value(strKeysList.at(i)) == QString::number(CODE_DP1))) {
+                itsDP1 = itsProtocol->getReadedData().value(strKeysList.at(i));
 #ifdef DEBUG
-                qDebug() << "QString::number(CODE_DPs):" << itsProtocol->getReadedData().value(strKeysList.at(i));
+                qDebug() << "QString::number(CODE_DP1):" << itsProtocol->getReadedData().value(strKeysList.at(i));
+#endif
+            } else if(strKeysList.at(i) == QString("CODE")
+                      && itsProtocol->getReadedData().value(strKeysList.at(i)) == QString::number(CODE_DP2)) {
+                itsDP2 = itsProtocol->getReadedData().value(strKeysList.at(i));
+#ifdef DEBUG
+                qDebug() << "QString::number(CODE_DP2):" << itsProtocol->getReadedData().value(strKeysList.at(i));
 #endif
             }
         }
@@ -522,11 +527,13 @@ void Dialog::displayDP()
     QList<QLCDNumber*> list;
     list << lcdDP2 << lcdDP1;
     QString tempStr;
+    QStringList DPList;
+    DPList << itsDP1 << itsDP2;
 #ifdef DEBUG
-        qDebug() << "itsDPList.size() =" << itsDPList.size();
+        qDebug() << "itsDPList.size() =" << DPList.size();
 #endif
-    for(int k = 0; k < list.size() && k < itsDPList.size(); ++k) {
-        tempStr = itsDPList.at(itsDPList.size() - 1 - k);
+    for(int k = 0; k < list.size() && k < DPList.size(); ++k) {
+        tempStr = DPList.at(DPList.size() - 1 - k);
 
         if(list.at(k)->digitCount() < tempStr.size())
         {
@@ -535,10 +542,8 @@ void Dialog::displayDP()
             list[k]->display(tempStr);
         }
 #ifdef DEBUG
-        qDebug() << "itsDPList.size() =" << itsDPList.size();
+        qDebug() << "DPList.size() =" << DPList.size();
         qDebug() << "DP[" << k << "] =" << list.at(k)->value();
 #endif
-    }
-
-    itsDPList.clear();
+    }    
 }

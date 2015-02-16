@@ -70,7 +70,8 @@ class Dialog : public QDialog
     IProtocol *itsProtocol;
 
     QStringList itsSensorsList;
-    QStringList itsDPList;
+    QString itsDP1;
+    QString itsDP2;
 
     // цвет индикации температуры >0 & <=0
     void setColorLCD(QLCDNumber *lcd, bool isHeat);
