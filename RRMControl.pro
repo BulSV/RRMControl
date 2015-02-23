@@ -37,11 +37,9 @@ else {
 }
 
 HEADERS += \
-    SpinBox.h \
     ComPort.h \
     Dialog.h \
     IProtocol.h \
-    RewindButton.h \
     RRMProtocol.h \
     SpinBoxButton.h \
     ISpinBox.h \
@@ -51,8 +49,6 @@ SOURCES += \
     ComPort.cpp \
     Dialog.cpp \
     main.cpp \
-    RewindButton.cpp \
-    SpinBox.cpp \
     RRMProtocol.cpp \
     ISpinBox.cpp \
     LCDSpinBox.cpp \
