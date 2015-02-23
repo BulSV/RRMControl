@@ -103,6 +103,8 @@ private slots:
     // display current Rx data
     void displayTemp();
     void displayDP();
+    // colored set temp LCD if value < 0
+    void colorSetTempLCD();
 public:
     explicit Dialog(QWidget *parent = 0);
     ~Dialog();

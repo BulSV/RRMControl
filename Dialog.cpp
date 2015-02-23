@@ -211,13 +211,18 @@ Dialog::Dialog(QWidget *parent) :
     sbSetTemp->setValue(NORMAL_TEMP);
 
     QList<QLCDNumber*> list;
-    list << lcdDP1 << lcdDP2 << lcdSensorTemp;
+    list << lcdDP1 << lcdDP2 << lcdSensorTemp
+         << dynamic_cast<QLCDNumber*>(sbSetDP1->spinWidget())
+         << dynamic_cast<QLCDNumber*>(sbSetDP2->spinWidget())
+         << dynamic_cast<QLCDNumber*>(sbSetTemp->spinWidget());
     foreach(QLCDNumber *lcd, list) {
         lcd->setMinimumSize(80, 25);
         lcd->setMaximumSize(80, 25);
         lcd->setSegmentStyle(QLCDNumber::Flat);
         lcd->setFrameStyle(QFrame::NoFrame);
     }
+
+    colorSetTempLCD();
 
     lcdDP1->setDigitCount(DP1_DIGITS);
     lcdDP2->setDigitCount(DP2_DIGITS);
@@ -242,6 +247,8 @@ Dialog::Dialog(QWidget *parent) :
     connect(bSetTemp, SIGNAL(clicked()), this, SLOT(writeTemp()));
     connect(bSetDP1, SIGNAL(clicked()), this, SLOT(writeDP1()));
     connect(bSetDP2, SIGNAL(clicked()), this, SLOT(writeDP2()));
+
+    connect(sbSetTemp, SIGNAL(valueChanged()), this, SLOT(colorSetTempLCD()));
 
     connect(bWrite, SIGNAL(clicked()), this, SLOT(writePermanently()));
 
@@ -544,4 +551,9 @@ void Dialog::displayDP()
         qDebug() << "DP[" << k << "] =" << list.at(k)->value();
 #endif
     }
+}
+
+void Dialog::colorSetTempLCD()
+{
+    setColorLCD(dynamic_cast<QLCDNumber*>(sbSetTemp->spinWidget()), sbSetTemp->value() > 0);
 }
