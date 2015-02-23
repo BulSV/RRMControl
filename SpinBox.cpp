@@ -12,7 +12,7 @@ SpinBox::SpinBox(const QIcon &iconDown,
     , bDown(new RewindButton(iconDown, textDown, timeToRewind, this))
     , bUp(new RewindButton(iconUp, textUp, timeToRewind, this))
 {
-    sbInput->setButtonSymbols(QAbstractSpinBox::NoButtons);    
+    sbInput->setButtonSymbols(QAbstractSpinBox::NoButtons);
 
     QGridLayout *grid = new QGridLayout(this);
     grid->addWidget(sbInput, 0, 0, 1, 2);
@@ -43,7 +43,7 @@ SpinBox::SpinBox(const QString &textDown,
     , bDown(new RewindButton(textDown, timeToRewind, this))
     , bUp(new RewindButton(textUp, timeToRewind, this))
 {
-    sbInput->setButtonSymbols(QAbstractSpinBox::NoButtons);    
+    sbInput->setButtonSymbols(QAbstractSpinBox::NoButtons);
 
     QGridLayout *grid = new QGridLayout(this);
     grid->addWidget(sbInput, 0, 0, 1, 2);

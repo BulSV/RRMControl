@@ -42,7 +42,10 @@ HEADERS += \
     Dialog.h \
     IProtocol.h \
     RewindButton.h \
-    RRMProtocol.h
+    RRMProtocol.h \
+    SpinBoxButton.h \
+    ISpinBox.h \
+    LCDSpinBox.h
 
 SOURCES += \
     ComPort.cpp \
@@ -50,7 +53,10 @@ SOURCES += \
     main.cpp \
     RewindButton.cpp \
     SpinBox.cpp \
-    RRMProtocol.cpp
+    RRMProtocol.cpp \
+    ISpinBox.cpp \
+    LCDSpinBox.cpp \
+    SpinBoxButton.cpp
 
 RESOURCES += \
     RRMControl.qrc
