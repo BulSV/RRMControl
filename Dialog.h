@@ -19,7 +19,7 @@
 #include "ComPort.h"
 #include "IProtocol.h"
 #include "RRMProtocol.h"
-#include "SpinBox.h"
+#include "ISpinBox.h"
 
 class Dialog : public QDialog
 {
@@ -41,9 +41,9 @@ class Dialog : public QDialog
     QLabel *lTx;
     QLabel *lRx;
 
-    SpinBox *sbSetDP1;
-    SpinBox *sbSetDP2;
-    SpinBox *sbSetTemp;
+    ISpinBox *sbSetDP1;
+    ISpinBox *sbSetDP2;
+    ISpinBox *sbSetTemp;
 
     QLCDNumber *lcdDP1;
     QLCDNumber *lcdDP2;

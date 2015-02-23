@@ -1,4 +1,5 @@
 #include "Dialog.h"
+#include "LCDSpinBox.h"
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QGridLayout>
@@ -62,12 +63,12 @@ Dialog::Dialog(QWidget *parent) :
         bPortStop(new QPushButton(QString::fromUtf8("Stop"), this)),
         lTx(new QLabel("  Tx  ", this)),
         lRx(new QLabel("  Rx  ", this)),
-        sbSetDP1(new SpinBox(QIcon(":/Resources/left.png"), QIcon(":/Resources/right.png"),
-                              QString::fromUtf8(""), QString::fromUtf8(""), REWINDTIME, this)),
-        sbSetDP2(new SpinBox(QIcon(":/Resources/left.png"), QIcon(":/Resources/right.png"),
-                              QString::fromUtf8(""), QString::fromUtf8(""), REWINDTIME, this)),
-        sbSetTemp(new SpinBox(QIcon(":/Resources/left.png"), QIcon(":/Resources/right.png"),
-                              QString::fromUtf8(""), QString::fromUtf8(""), REWINDTIME, this)),
+        sbSetDP1(new LCDSpinBox(QIcon(":/Resources/left.png"), QIcon(":/Resources/right.png"),
+                              QString::fromUtf8(""), QString::fromUtf8(""), LCDSpinBox::DEC_MODE, this)),
+        sbSetDP2(new LCDSpinBox(QIcon(":/Resources/left.png"), QIcon(":/Resources/right.png"),
+                              QString::fromUtf8(""), QString::fromUtf8(""), LCDSpinBox::DEC_MODE, this)),
+        sbSetTemp(new LCDSpinBox(QIcon(":/Resources/left.png"), QIcon(":/Resources/right.png"),
+                              QString::fromUtf8(""), QString::fromUtf8(""), LCDSpinBox::DEC_MODE, this)),
         lcdDP1(new QLCDNumber(this)),
         lcdDP2(new QLCDNumber(this)),
         lcdSensorTemp(new QLCDNumber(this)),
@@ -238,16 +239,8 @@ Dialog::Dialog(QWidget *parent) :
     connect(itsTimeToDisplay, SIGNAL(timeout()), this, SLOT(displayTemp()));
     connect(itsTimeToDisplay, SIGNAL(timeout()), this, SLOT(displayDP()));
 
-    connect(sbSetTemp, SIGNAL(downButtonReleased()), this, SLOT(writeTemp()));
-    connect(sbSetTemp, SIGNAL(upButtonReleased()), this, SLOT(writeTemp()));
     connect(bSetTemp, SIGNAL(clicked()), this, SLOT(writeTemp()));
-
-    connect(sbSetDP1, SIGNAL(downButtonReleased()), this, SLOT(writeDP1()));
-    connect(sbSetDP1, SIGNAL(upButtonReleased()), this, SLOT(writeDP1()));
     connect(bSetDP1, SIGNAL(clicked()), this, SLOT(writeDP1()));
-
-    connect(sbSetDP2, SIGNAL(downButtonReleased()), this, SLOT(writeDP2()));
-    connect(sbSetDP2, SIGNAL(upButtonReleased()), this, SLOT(writeDP2()));
     connect(bSetDP2, SIGNAL(clicked()), this, SLOT(writeDP2()));
 
     connect(bWrite, SIGNAL(clicked()), this, SLOT(writePermanently()));
