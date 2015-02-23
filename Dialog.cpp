@@ -207,6 +207,7 @@ Dialog::Dialog(QWidget *parent) :
     itsTimeToDisplay->setInterval(DISPLAYTIME);
 
     sbSetDP1->setRange(DPRANGE_MIN, DPRANGE_MAX);
+    sbSetDP2->setRange(DPRANGE_MIN, DPRANGE_MAX);
     sbSetTemp->setRange(TEMPRANGE_MIN, TEMPRANGE_MAX);
     sbSetTemp->setValue(NORMAL_TEMP);
 
