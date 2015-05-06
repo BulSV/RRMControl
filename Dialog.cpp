@@ -56,23 +56,26 @@ Dialog::Dialog(QWidget *parent) :
         bPortStop(new QPushButton(QString::fromUtf8("Stop"), this)),
         lTx(new QLabel("  Tx  ", this)),
         lRx(new QLabel("  Rx  ", this)),
-        sbSetDP1(new LCDSpinBox(QIcon(":/Resources/down.png"), QIcon(":/Resources/up.png"),
-                              QString::fromUtf8(""), QString::fromUtf8(""), QLCDNumber::Dec, LCDSpinBox::RIGHT, this)),
-        sbSetDP2(new LCDSpinBox(QIcon(":/Resources/down.png"), QIcon(":/Resources/up.png"),
-                              QString::fromUtf8(""), QString::fromUtf8(""), QLCDNumber::Dec, LCDSpinBox::RIGHT, this)),
-        sbSetTemp(new LCDSpinBox(QIcon(":/Resources/down.png"), QIcon(":/Resources/up.png"),
-                              QString::fromUtf8(""), QString::fromUtf8(""), QLCDNumber::Dec, LCDSpinBox::RIGHT, this)),
+//        sbSetDP1(new LCDSpinBox(QIcon(":/Resources/down.png"), QIcon(":/Resources/up.png"),
+//                              QString::fromUtf8(""), QString::fromUtf8(""), QLCDNumber::Dec, LCDSpinBox::RIGHT, this)),
+//        sbSetDP2(new LCDSpinBox(QIcon(":/Resources/down.png"), QIcon(":/Resources/up.png"),
+//                              QString::fromUtf8(""), QString::fromUtf8(""), QLCDNumber::Dec, LCDSpinBox::RIGHT, this)),
+//        sbSetTemp(new LCDSpinBox(QIcon(":/Resources/down.png"), QIcon(":/Resources/up.png"),
+//                              QString::fromUtf8(""), QString::fromUtf8(""), QLCDNumber::Dec, LCDSpinBox::RIGHT, this)),
+        sbSetDP1(new QSpinBox(this)),
+        sbSetDP2(new QSpinBox(this)),
+        sbSetTemp(new QSpinBox(this)),
         lcdDP1(new QLCDNumber(this)),
         lcdDP2(new QLCDNumber(this)),
         lcdSensorTemp(new QLCDNumber(this)),
-        lDP1(new QLabel(QString::fromUtf8("DP 1:"), this)),
-        lDP2(new QLabel(QString::fromUtf8("DP 2:"), this)),
+        lDP1(new QLabel(QString::fromUtf8("Offset:"), this)),
+        lDP2(new QLabel(QString::fromUtf8("Gain:"), this)),
         lSensor(new QLabel(QString::fromUtf8("Sensor, °C:"), this)),
         bSetDP1(new QPushButton(QString::fromUtf8("Set"), this)),
         bSetDP2(new QPushButton(QString::fromUtf8("Set"), this)),
         bSetTemp(new QPushButton(QString::fromUtf8("Set"), this)),
-        gbSetDP1(new QGroupBox(QString::fromUtf8("DP 1"), this)),
-        gbSetDP2(new QGroupBox(QString::fromUtf8("DP 2"), this)),
+        gbSetDP1(new QGroupBox(QString::fromUtf8("Offset"), this)),
+        gbSetDP2(new QGroupBox(QString::fromUtf8("Gain"), this)),
         gbSetTemp(new QGroupBox(QString::fromUtf8("Temperature, °C"), this)),
         gbConfig(new QGroupBox(QString::fromUtf8("Configure"), this)),
         gbInfo(new QGroupBox(QString::fromUtf8("Information"), this)),
@@ -87,25 +90,35 @@ Dialog::Dialog(QWidget *parent) :
         itsBlinkTimeRxColor(new QTimer(this)),
         itsTimeToDisplay(new QTimer(this))
 {
-    setLayout(new QVBoxLayout(this));
+//    dynamic_cast<QPushButton *>( sbSetDP1->buttonUpWidget() )->setMaximumSize(20, 20);
+//    dynamic_cast<QPushButton *>( sbSetDP1->buttonDownWidget() )->setMaximumSize(20, 20);
 
-    dynamic_cast<QPushButton *>( sbSetDP1->buttonUpWidget() )->setMaximumSize(20, 20);
-    dynamic_cast<QPushButton *>( sbSetDP1->buttonDownWidget() )->setMaximumSize(20, 20);
+//    dynamic_cast<QPushButton *>( sbSetDP2->buttonUpWidget() )->setMaximumSize(20, 20);
+//    dynamic_cast<QPushButton *>( sbSetDP2->buttonDownWidget() )->setMaximumSize(20, 20);
 
-    dynamic_cast<QPushButton *>( sbSetDP2->buttonUpWidget() )->setMaximumSize(20, 20);
-    dynamic_cast<QPushButton *>( sbSetDP2->buttonDownWidget() )->setMaximumSize(20, 20);
+//    dynamic_cast<QPushButton *>( sbSetTemp->buttonUpWidget() )->setMaximumSize(20, 20);
+//    dynamic_cast<QPushButton *>( sbSetTemp->buttonDownWidget() )->setMaximumSize(20, 20);
 
-    dynamic_cast<QPushButton *>( sbSetTemp->buttonUpWidget() )->setMaximumSize(20, 20);
-    dynamic_cast<QPushButton *>( sbSetTemp->buttonDownWidget() )->setMaximumSize(20, 20);
+    bSetDP1->setMaximumSize(60, 30);
+    bSetDP1->setMinimumSize(60, 30);
 
-    bSetDP1->setMaximumSize(45, 45);
-    bSetDP1->setMinimumSize(45, 45);
+    bSetDP2->setMaximumSize(60, 30);
+    bSetDP2->setMinimumSize(60, 30);
 
-    bSetDP2->setMaximumSize(45, 45);
-    bSetDP2->setMinimumSize(45, 45);
+    bSetTemp->setMaximumSize(60, 30);
+    bSetTemp->setMinimumSize(60, 30);
 
-    bSetTemp->setMaximumSize(45, 45);
-    bSetTemp->setMinimumSize(45, 45);
+//    bCalibr->setMaximumSize(80, 30);
+//    bCalibr->setMinimumSize(80, 30);
+
+//    bWrite->setMaximumSize(80, 30);
+//    bWrite->setMinimumSize(80, 30);
+
+    bCalibr->setMinimumHeight(30);
+    bCalibr->setMaximumHeight(30);
+
+    bWrite->setMinimumHeight(30);
+    bWrite->setMaximumHeight(30);
 
     lTx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");
     lTx->setFrameStyle(QFrame::Box);
@@ -119,51 +132,51 @@ Dialog::Dialog(QWidget *parent) :
 
     QGridLayout *gridDP1 = new QGridLayout;
     gridDP1->addWidget(sbSetDP1, 0, 0);
-    gridDP1->addWidget(bSetDP1, 0, 1);
+    gridDP1->addWidget(bSetDP1, 1, 0);
 
     QGridLayout *gridDP2 = new QGridLayout;
     gridDP2->addWidget(sbSetDP2, 0, 0);
-    gridDP2->addWidget(bSetDP2, 0, 1);
+    gridDP2->addWidget(bSetDP2, 1, 0);
 
     QGridLayout *gridTemp = new QGridLayout;
     gridTemp->addWidget(sbSetTemp, 0, 0);
-    gridTemp->addWidget(bSetTemp, 0, 1);
+    gridTemp->addWidget(bSetTemp, 1, 0);
 
     gbSetDP1->setLayout(gridDP1);
     gbSetDP2->setLayout(gridDP2);
     gbSetTemp->setLayout(gridTemp);
 
     QGridLayout *gridConfig = new QGridLayout;
-    gridConfig->addWidget(gbSetDP1, 0, 0, 1, 3);
-    gridConfig->addWidget(gbSetDP2, 0, 3, 1, 3);
-    gridConfig->addWidget(gbSetTemp, 0, 6, 1, 3);
-    gridConfig->addWidget(bCalibr, 1, 7);
-    gridConfig->addWidget(bWrite, 1, 8);
+    gridConfig->addWidget(gbSetDP1, 0, 0, 1, 2);
+    gridConfig->addWidget(gbSetDP2, 0, 2, 1, 2);
+    gridConfig->addWidget(gbSetTemp, 0, 4, 1, 2);
+    gridConfig->addWidget(bCalibr, 1, 2, 1, 2);
+    gridConfig->addWidget(bWrite, 1, 4, 1, 2);
 
     gbConfig->setLayout(gridConfig);
 
     QFrame *frame1 = new QFrame(this);
-    frame1->setFrameStyle(QFrame::Box | QFrame::Raised);
+    frame1->setFrameStyle(QFrame::Box | QFrame::Sunken);
     lDP1->setMargin(5);
 
     QFrame *frame2 = new QFrame(this);
-    frame2->setFrameStyle(QFrame::Box | QFrame::Raised);
+    frame2->setFrameStyle(QFrame::Box | QFrame::Sunken);
     lDP2->setMargin(5);
 
     QFrame *frame3 = new QFrame(this);
-    frame3->setFrameStyle(QFrame::Box | QFrame::Raised);
+    frame3->setFrameStyle(QFrame::Box | QFrame::Sunken);
     lSensor->setMargin(5);
 
     QGridLayout *gridInfo = new QGridLayout;
     gridInfo->addWidget(lDP1, 0, 0);
     gridInfo->addWidget(lcdDP1, 0, 1);
     gridInfo->addWidget(frame1, 0, 0, 1, 2);
-    gridInfo->addWidget(lDP2, 0, 3);
-    gridInfo->addWidget(lcdDP2, 0, 4);
-    gridInfo->addWidget(frame2, 0, 3, 1, 2);
-    gridInfo->addWidget(lSensor, 0, 6);
-    gridInfo->addWidget(lcdSensorTemp, 0, 7);
-    gridInfo->addWidget(frame3, 0, 6, 1, 2);
+    gridInfo->addWidget(lDP2, 0, 2);
+    gridInfo->addWidget(lcdDP2, 0, 3);
+    gridInfo->addWidget(frame2, 0, 2, 1, 2);
+    gridInfo->addWidget(lSensor, 0, 4);
+    gridInfo->addWidget(lcdSensorTemp, 0, 5);
+    gridInfo->addWidget(frame3, 0, 4, 1, 2);
     gridInfo->setSpacing(5);
 
     gbInfo->setLayout(gridInfo);
@@ -174,13 +187,16 @@ Dialog::Dialog(QWidget *parent) :
     grid->addWidget(lBaud, 1, 0);
     grid->addWidget(cbBaud, 1, 1);
     // пещаю логотип фирмы
-    grid->addWidget(new QLabel("<img src=':/Resources/elisat.png' height='40' width='150'/>", this), 0, 3, 2, 5, Qt::AlignRight);
+    grid->addWidget(new QLabel("<img src=':/Resources/elisat.png' height='40' width='150'/>", this), 0, 3, 2, 4, Qt::AlignRight);
     grid->addWidget(bPortStart, 2, 1);
     grid->addWidget(bPortStop, 2, 2);
-    grid->addWidget(lTx, 2, 6, Qt::AlignRight);
-    grid->addWidget(lRx, 2, 7, Qt::AlignRight);
+    grid->addItem(new QSpacerItem(1, 1, QSizePolicy::Expanding), 2, 3);
+    grid->addItem(new QSpacerItem(1, 1, QSizePolicy::Expanding), 2, 4);
+    grid->addWidget(lTx, 2, 5, 1, 1, Qt::AlignRight);
+    grid->addWidget(lRx, 2, 6, 1, 1, Qt::AlignRight);
     grid->setSpacing(5);
 
+    setLayout(new QGridLayout(this));
     layout()->addItem(grid);
     layout()->addWidget(gbConfig);
     layout()->addWidget(gbInfo);
@@ -215,16 +231,19 @@ Dialog::Dialog(QWidget *parent) :
     itsBlinkTimeRxColor->setInterval(BLINKTIMERX);
     itsTimeToDisplay->setInterval(DISPLAYTIME);
 
-    sbSetDP1->setRange(DPRANGE_MIN, DPRANGE_MAX, DPRANGE_STEP);
-    sbSetDP2->setRange(DPRANGE_MIN, DPRANGE_MAX, DPRANGE_STEP);
-    sbSetTemp->setRange(TEMPRANGE_MIN, TEMPRANGE_MAX, TEMPRANGE_STEP);
+    sbSetDP1->setRange(DPRANGE_MIN, DPRANGE_MAX/*, DPRANGE_STEP*/);
+    sbSetDP1->setAlignment(Qt::AlignCenter);
+    sbSetDP2->setRange(DPRANGE_MIN, DPRANGE_MAX/*, DPRANGE_STEP*/);
+    sbSetDP2->setAlignment(Qt::AlignCenter);
+    sbSetTemp->setRange(TEMPRANGE_MIN, TEMPRANGE_MAX/*, TEMPRANGE_STEP*/);
+    sbSetTemp->setAlignment(Qt::AlignCenter);
     sbSetTemp->setValue(NORMAL_TEMP);
 
     QList<QLCDNumber*> list;
-    list << lcdDP1 << lcdDP2 << lcdSensorTemp
-         << dynamic_cast<QLCDNumber*>(sbSetDP1->spinWidget())
-         << dynamic_cast<QLCDNumber*>(sbSetDP2->spinWidget())
-         << dynamic_cast<QLCDNumber*>(sbSetTemp->spinWidget());
+    list << lcdDP1 << lcdDP2 << lcdSensorTemp;
+//         << dynamic_cast<QLCDNumber*>(sbSetDP1->spinWidget())
+//         << dynamic_cast<QLCDNumber*>(sbSetDP2->spinWidget())
+//         << dynamic_cast<QLCDNumber*>(sbSetTemp->spinWidget());
     foreach(QLCDNumber *lcd, list) {
         lcd->setMinimumSize(80, 25);
         lcd->setMaximumSize(80, 25);
@@ -258,7 +277,7 @@ Dialog::Dialog(QWidget *parent) :
     connect(bSetDP1, SIGNAL(clicked()), this, SLOT(writeDP1()));
     connect(bSetDP2, SIGNAL(clicked()), this, SLOT(writeDP2()));
 
-    connect(sbSetTemp, SIGNAL(valueChanged()), this, SLOT(colorSetTempLCD()));
+//    connect(sbSetTemp, SIGNAL(valueChanged()), this, SLOT(colorSetTempLCD()));
 
     connect(bWrite, SIGNAL(clicked()), this, SLOT(writePermanently()));
     connect(bCalibr, SIGNAL(clicked()), this, SLOT(calibrate()));
@@ -558,5 +577,5 @@ void Dialog::displayDP()
 
 void Dialog::colorSetTempLCD()
 {
-    setColorLCD(dynamic_cast<QLCDNumber*>(sbSetTemp->spinWidget()), sbSetTemp->value() > 0);
+//    setColorLCD(dynamic_cast<QLCDNumber*>(sbSetTemp->spinWidget()), sbSetTemp->value() > 0);
 }

@@ -41,9 +41,12 @@ class Dialog : public QDialog
     QLabel *lTx;
     QLabel *lRx;
 
-    ISpinBox *sbSetDP1;
-    ISpinBox *sbSetDP2;
-    ISpinBox *sbSetTemp;
+//    ISpinBox *sbSetDP1;
+//    ISpinBox *sbSetDP2;
+//    ISpinBox *sbSetTemp;
+    QSpinBox *sbSetDP1;
+    QSpinBox *sbSetDP2;
+    QSpinBox *sbSetTemp;
 
     QLCDNumber *lcdDP1;
     QLCDNumber *lcdDP2;

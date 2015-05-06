@@ -1,8 +1,8 @@
 #include "RRMProtocol.h"
 
-//#ifdef DEBUG
+#ifdef DEBUG
 #include <QDebug>
-//#endif
+#endif
 
 #define STARTBYTE 0x55
 #define STOPBYTE 0xAA
@@ -62,9 +62,6 @@ void RRMProtocol::readData(bool isReaded)
 
         if( static_cast<int>(ba.at(1)) < 0x10 ) {
 
-            qDebug() << "QString::number(wordToInt(ba.mid(1, 2)))" << QString::number(wordToInt(ba.mid(1, 2)));
-            qDebug() << "QString::number(wordToInt(ba.mid(3, 2)))" << QString::number(wordToInt(ba.mid(3, 2)));
-            qDebug() << "QString::number(wordToInt(sensorTemp(ba.mid(5, 2))), FORMAT, PRECISION)" << QString::number(sensorTemp(wordToInt(ba.mid(5, 2))), FORMAT, PRECISION);
             itsReadData.insert(QString("DP1"),
                                QString::number(wordToInt(ba.mid(1, 2))));
             itsReadData.insert(QString("DP2"),
