@@ -16,16 +16,6 @@
 #define STOPBYTE 0xAA
 #define BYTESLENTH 8
 
-#define NEGATIVE 32768 // 2^15
-#define OFFSET 65536 // 2^16
-#define SLOPE 128
-
-#define CPU_FACTOR 0.537
-#define CPU_OFFSET 900
-#define CPU_SLOPE 2.95
-
-#define ACCURACY 0.02
-
 #define FORMAT 'f'
 #define PRECISION 2
 
@@ -46,10 +36,11 @@
 #define DP2_DIGITS 4
 #define TEMP_DIGITS 6
 
-#define CODE_TEMP 0x00
+#define CODE_WRITE 0x00
 #define CODE_DP1 0x01
 #define CODE_DP2 0x02
-#define CODE_WRITE 0x03
+#define CODE_TEMP 0x03
+#define CODE_CALIBR 0x04
 
 #define NONE_DATA 0x00
 
@@ -84,10 +75,10 @@ Dialog::Dialog(QWidget *parent) :
         gbConfig(new QGroupBox(QString::fromUtf8("Configure"), this)),
         gbInfo(new QGroupBox(QString::fromUtf8("Information"), this)),
         bWrite(new QPushButton(QString::fromUtf8("Write"), this)),
+        bCalibr(new QPushButton(QString::fromUtf8("Calibrate"), this)),
         itsPort(new QSerialPort(this)),
-        itsComPort(new ComPort(itsPort, STARTBYTE, STOPBYTE, BYTESLENTH, this)),
+        itsComPort(new ComPort(itsPort, STARTBYTE, STOPBYTE, BYTESLENTH, false, this)),
         itsProtocol(new RRMProtocol(itsComPort, this)),
-        itsStatusBar (new QStatusBar(this)),
         itsBlinkTimeTxNone(new QTimer(this)),
         itsBlinkTimeRxNone(new QTimer(this)),
         itsBlinkTimeTxColor(new QTimer(this)),
@@ -126,6 +117,7 @@ Dialog::Dialog(QWidget *parent) :
     gridConfig->addWidget(gbSetDP1, 0, 0, 3, 2);
     gridConfig->addWidget(gbSetDP2, 0, 3, 3, 2);
     gridConfig->addWidget(gbSetTemp, 0, 5, 3, 2);
+    gridConfig->addWidget(bCalibr, 3, 0, 1, 2);
     gridConfig->addWidget(bWrite, 3, 5, 1, 2);
 
     gbConfig->setLayout(gridConfig);
@@ -172,7 +164,6 @@ Dialog::Dialog(QWidget *parent) :
     layout()->addItem(grid);
     layout()->addWidget(gbConfig);
     layout()->addWidget(gbInfo);
-    layout()->addWidget(itsStatusBar);
     layout()->setSpacing(5);
 
     // делает окно фиксированного размера
@@ -197,8 +188,6 @@ Dialog::Dialog(QWidget *parent) :
     cbBaud->addItems(portsBauds);
     cbBaud->setEditable(false);
     bPortStop->setEnabled(false);
-
-    itsStatusBar->show();
 
     itsBlinkTimeTxNone->setInterval(BLINKTIMETX);
     itsBlinkTimeRxNone->setInterval(BLINKTIMERX);
@@ -252,6 +241,7 @@ Dialog::Dialog(QWidget *parent) :
     connect(sbSetTemp, SIGNAL(valueChanged()), this, SLOT(colorSetTempLCD()));
 
     connect(bWrite, SIGNAL(clicked()), this, SLOT(writePermanently()));
+    connect(bCalibr, SIGNAL(clicked()), this, SLOT(calibrate()));
 
     QShortcut *aboutShortcut = new QShortcut(QKeySequence("F1"), this);
     connect(aboutShortcut, SIGNAL(activated()), qApp, SLOT(aboutQt()));
@@ -288,12 +278,6 @@ void Dialog::openPort()
         itsPort->setParity(QSerialPort::NoParity);
         itsPort->setFlowControl(QSerialPort::NoFlowControl);
 
-        itsStatusBar->showMessage(QString::fromUtf8("Port: ") +
-                             QString(itsPort->portName()) +
-                             QString::fromUtf8(" | Baud: ") +
-                             QString(QString::number(itsPort->baudRate())) +
-                             QString::fromUtf8(" | Data bits: ") +
-                             QString(QString::number(itsPort->dataBits())));
         bPortStart->setEnabled(false);
         bPortStop->setEnabled(true);
         lTx->setStyleSheet("background: none; font: bold; font-size: 10pt");
@@ -301,8 +285,6 @@ void Dialog::openPort()
     }
     else
     {
-        itsStatusBar->showMessage(QString::fromUtf8("Error opening port: ") +
-                             QString(itsPort->portName()));
         lTx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");
         lRx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");
     }
@@ -374,8 +356,8 @@ void Dialog::write(const Dialog::CODE &code)
 
         switch (static_cast<int>(code)) {
         case 0:
-            codeStr = QString::number(CODE_TEMP);
-            data = QString::number(sbSetTemp->value());
+            codeStr = QString::number(CODE_WRITE);
+            data = QString::number(NONE_DATA);
             break;
         case 1:
             codeStr = QString::number(CODE_DP1);
@@ -386,11 +368,15 @@ void Dialog::write(const Dialog::CODE &code)
             data = QString::number(sbSetDP2->value());
             break;
         case 3:
-            codeStr = QString::number(CODE_WRITE);
+            codeStr = QString::number(CODE_TEMP);
+            data = QString::number(sbSetTemp->value());
+            break;
+        case 4:
+            codeStr = QString::number(CODE_CALIBR);
             data = QString::number(NONE_DATA);
             break;
         default:
-            codeStr = QString::number(CODE_TEMP);
+            codeStr = QString::number(CODE_CALIBR);
             break;
         }
         dataTemp.insert("CODE", codeStr);
@@ -413,6 +399,11 @@ void Dialog::writeDP2()
 void Dialog::writeTemp()
 {
     write(TEMP);
+}
+
+void Dialog::calibrate()
+{
+    write(CALIBR);
 }
 
 void Dialog::writePermanently()

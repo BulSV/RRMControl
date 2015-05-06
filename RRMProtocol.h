@@ -4,6 +4,9 @@
 #include "IProtocol.h"
 #include "ComPort.h"
 
+#include <QTimer>
+#include <QVector>
+
 class RRMProtocol : public IProtocol
 {
     Q_OBJECT
@@ -24,27 +27,14 @@ private:
     QMultiMap<QString, QString> itsWriteData;
     QMultiMap<QString, QString> itsReadData;
 
-    float itsPrevCPUTemp;
-    float itsPrevSensorTemp;
-
-    bool itsWasPrevCPUTemp;
-    bool itsWasPrevSensorTemp;
-
-    // датчики температуры
-    enum SENSORS {
-        CPU, SENSOR
-    };
+    QTimer *m_resend;
+    int m_numResends;
+    int m_currentResend;
 
     // преобразует word в byte
     int wordToInt(QByteArray ba);
     // определяет температуру
-    float tempSensors(int temp);
-    // определяет температуру кристалла
-    float tempCPU(int temp);
-    // коррекция скачков температуры
-    float tempCorr(float temp, SENSORS sensor);
-    // преобразует enum SENSORS в строку
-    QString sensorToString(SENSORS sensor);
+    double sensorTemp(const QVector<int> &k, const int &ADC16);
     // disintegrating number of byte by byte
     QByteArray intToByteArray(const int &value, const int &numBytes);
 };

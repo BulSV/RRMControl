@@ -1,5 +1,5 @@
-#ifndef ONEPACKET_H
-#define ONEPACKET_H
+#ifndef COMPORT_H
+#define COMPORT_H
 
 #include <QObject>
 #include <QtSerialPort/QSerialPort>
@@ -13,6 +13,7 @@ public:
             int startByte = 0x55,
             int stopByte = 0xAA,
             int packetLenght = 8,
+            bool isMaster = true,
             QObject *parent = 0);
     QByteArray getReadData() const;
     void setWriteData(const QByteArray &data);
@@ -36,6 +37,11 @@ private:
     int itsStopByte;
     int itsPacketLenght;
     int m_counter;
+
+    bool m_isDataWritten;
+    bool m_isMaster;
+
+    void privateWriteData();
 };
 
-#endif // ONEPACKET_H
+#endif // COMPORT_H

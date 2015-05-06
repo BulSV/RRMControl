@@ -8,34 +8,29 @@
 #define STOPBYTE 0xAA
 #define BYTESLENTH 8
 
-#define NEGATIVE 32768 // 2^15
-#define OFFSET 65536 // 2^16
-#define SLOPE 128
-
-#define CPU_FACTOR 0.537
-#define CPU_OFFSET 900
-#define CPU_SLOPE 2.95
-
-#define ACCURACY 0.02
-
 #define FORMAT 'f'
 #define PRECISION 2
 
-#define CODE_TEMP 0x00
+#define CODE_WRITE 0x00
 #define CODE_DP1 0x01
 #define CODE_DP2 0x02
+#define CODE_TEMP 0x03
+#define CODE_CALIBR 0x04
 
-#define NONE_DATA '\0'
+#define NULL_DATA '\0'
 
 RRMProtocol::RRMProtocol(ComPort *comPort, QObject *parent) :
     IProtocol(parent),
     itsComPort(comPort),
-    itsPrevCPUTemp(0.0),
-    itsPrevSensorTemp(0.0),
-    itsWasPrevCPUTemp(false),
-    itsWasPrevSensorTemp(false)
+    m_resend(new QTimer(this)),
+    m_numResends(3),
+    m_currentResend(0)
 {
+    m_resend->setInterval(100);
+
     connect(itsComPort, SIGNAL(DataIsReaded(bool)), this, SLOT(readData(bool)));
+    connect(itsComPort, SIGNAL(DataIsWrited(bool)), this, SIGNAL(DataIsWrited(bool)));
+    connect(m_resend, SIGNAL(timeout()), this, SLOT(writeData()));
 }
 
 void RRMProtocol::setDataToWrite(const QMultiMap<QString, QString> &data)
@@ -56,34 +51,60 @@ void RRMProtocol::readData(bool isReaded)
         QByteArray ba;
 
         ba = itsComPort->getReadData();
-#ifdef DEBUG
-        qDebug() << "read: " << QString::number(static_cast<int>(ba.at(1)));
-    for(int i = 0; i < ba.size(); ++i) {
-        qDebug() << "ba =" << (int)ba.at(i);
-    }
-#endif
+
         itsReadData.insert(QString("CODE"), QString::number(static_cast<int>(ba.at(1))));
-        if(static_cast<int>(ba.at(1)) == CODE_TEMP) {
-            itsReadData.insert(QString("DATA"),
-                               QString::number(tempCorr(tempSensors(wordToInt(ba.mid(2, 2))), SENSOR), FORMAT, PRECISION));
 
-            emit DataIsReaded(true);
-#ifdef DEBUG
-            qDebug() << "Reading temperature";
-#endif
-        } else if(static_cast<int>(ba.at(1)) == CODE_DP1 || static_cast<int>(ba.at(1)) == CODE_DP2){
-#ifdef DEBUG
-            qDebug() << "Reading DPs";
-#endif
-            itsReadData.insert(QString("DATA"), QString::number(wordToInt(ba.mid(2, 2))));
+        if( static_cast<int>(ba.at(1)) < 0x10 ) {
 
-            emit DataIsReaded(true);
+            itsReadData.insert(QString("DP1"),
+                               QString::number(wordToInt(ba.mid(2, 2)), FORMAT, PRECISION));
+            itsReadData.insert(QString("DP2"),
+                               QString::number(wordToInt(ba.mid(4, 2)), FORMAT, PRECISION));
+            itsReadData.insert(QString("TEMP"),
+                               QString::number(wordToInt(ba.mid(6, 2)), FORMAT, PRECISION));
+
         } else {
-            emit DataIsReaded(false);
+
+            switch ( static_cast<int>(ba.at(1)) ) {
+            case 0x10:
+                itsReadData.insert(QString("K0"),
+                                   QString::number(wordToInt(ba.mid(2, 2)), FORMAT, PRECISION));
+                break;
+            case 0x11:
+                itsReadData.insert(QString("K1"),
+                                   QString::number(wordToInt(ba.mid(2, 2)), FORMAT, PRECISION));
+                break;
+            case 0x12:
+                itsReadData.insert(QString("K2"),
+                                   QString::number(wordToInt(ba.mid(2, 2)), FORMAT, PRECISION));
+                break;
+            case 0x13:
+                itsReadData.insert(QString("K3"),
+                                   QString::number(wordToInt(ba.mid(2, 2)), FORMAT, PRECISION));
+                break;
+            case 0x14:
+                itsReadData.insert(QString("K4"),
+                                   QString::number(wordToInt(ba.mid(2, 2)), FORMAT, PRECISION));
+                break;
+            }
+
         }
+
+        emit DataIsReaded(true);
+
     } else {
         emit DataIsReaded(false);
     }
+//            // TODO
+//            if( !itsWriteData.isEmpty() && itsReadData.value("TEMP") != itsWriteData.value("TEMP")
+//                    && m_currentResend < m_numResends ) {
+//                m_resend->start();
+//                ++m_currentResend;
+//            } else {
+//                m_currentResend = 0;
+//                m_resend->stop();
+//            }
+//            // end TODO
 }
 
 void RRMProtocol::writeData()
@@ -92,11 +113,22 @@ void RRMProtocol::writeData()
 
     ba.append(STARTBYTE);
     ba.append(itsWriteData.value("CODE").toInt());
-    ba.append(intToByteArray(itsWriteData.value("DATA").toInt(), 2).at(0));
-    ba.append(intToByteArray(itsWriteData.value("DATA").toInt(), 2).at(1));
-    ba.append(NONE_DATA);
-    ba.append(NONE_DATA);
-    ba.append(NONE_DATA);
+
+    if( itsWriteData.value("CODE").toInt() != CODE_WRITE
+            && itsWriteData.value("CODE").toInt() != CODE_CALIBR ) {
+
+        ba.append(intToByteArray(itsWriteData.value("DATA").toInt(), 2).at(0));
+        ba.append(intToByteArray(itsWriteData.value("DATA").toInt(), 2).at(1));
+
+    } else {
+
+        ba.append(NULL_DATA);
+        ba.append(NULL_DATA);
+
+    }
+    ba.append(NULL_DATA);
+    ba.append(NULL_DATA);
+    ba.append(NULL_DATA);
     ba.append(STOPBYTE);
 
     itsComPort->setWriteData(ba);
@@ -111,8 +143,7 @@ void RRMProtocol::writeData()
 
 void RRMProtocol::resetProtocol()
 {
-    itsWasPrevCPUTemp = false;
-    itsWasPrevSensorTemp = false;
+    // TODO
 }
 
 // преобразует word в byte
@@ -143,78 +174,14 @@ int RRMProtocol::wordToInt(QByteArray ba)
 }
 
 // определяет температуру
-float RRMProtocol::tempSensors(int temp)
+double RRMProtocol::sensorTemp(const QVector<int> &k, const int &ADC16)
 {
-    if(temp & NEGATIVE) {
-        return -static_cast<float>(qAbs(temp - OFFSET))/SLOPE;
-    } else {
-        return static_cast<float>(temp)/SLOPE;
-    }
-}
+    double temp = 0.01 * ( (-1.5)*k.at(4) + ADC16*0.0001 *
+                           (k.at(3) + ADC16*0.00001 *
+                            ( (-2)*k.at(2) + ADC16*0.00001 *
+                              (4*k.at(1) + (-2)*0.00001*k.at(0)*ADC16 ) ) ) );
 
-// определяет температуру кристалла
-float RRMProtocol::tempCPU(int temp)
-{
-    return (static_cast<float>(temp*CPU_FACTOR - CPU_OFFSET))/CPU_SLOPE;
-}
-
-float RRMProtocol::tempCorr(float temp, RRMProtocol::SENSORS sensor)
-{
-    float prevValue = 0.0;
-    bool wasPrev = false;
-
-    switch (sensor) {
-    case CPU:
-        prevValue = itsPrevCPUTemp;
-        wasPrev = itsWasPrevCPUTemp;
-        break;
-    case SENSOR:
-        prevValue = itsPrevSensorTemp;
-        wasPrev = itsWasPrevSensorTemp;
-        break;
-    default:
-        prevValue = itsPrevCPUTemp;
-        wasPrev = itsWasPrevCPUTemp;
-        break;
-    }
-
-    if(wasPrev) {
-        prevValue = prevValue*(1 - ACCURACY) + temp*ACCURACY;
-    } else {
-        prevValue = temp;
-    }
-
-    switch (sensor) {
-    case CPU:
-        itsPrevCPUTemp = prevValue;
-        itsWasPrevCPUTemp = true;
-        break;
-    case SENSOR:
-        itsPrevSensorTemp = prevValue;
-        itsWasPrevSensorTemp = true;
-        break;
-    default:
-        itsPrevCPUTemp = prevValue;
-        itsWasPrevCPUTemp = true;
-        break;
-    }
-
-    return prevValue;
-}
-
-QString RRMProtocol::sensorToString(RRMProtocol::SENSORS sensor)
-{
-    switch (sensor) {
-    case CPU:
-        return "CPU";
-        break;
-    case SENSOR:
-        return "SENS";
-        break;
-    default:
-        return "CPU";
-        break;
-    }
+    return temp;
 }
 
 QByteArray RRMProtocol::intToByteArray(const int &value, const int &numBytes)

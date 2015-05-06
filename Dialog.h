@@ -12,7 +12,6 @@
 #include <QGroupBox>
 #include <QtSerialPort/QSerialPort>
 #include <QByteArray>
-#include <QStatusBar>
 #include <QTimer>
 #include <QLCDNumber>
 #include <QSpinBox>
@@ -26,10 +25,11 @@ class Dialog : public QDialog
     Q_OBJECT
 
     enum CODE {
-        TEMP,
+        WRITE,
         DP1,
         DP2,
-        WRITE
+        TEMP,
+        CALIBR
     };
 
     QLabel *lPort;
@@ -64,6 +64,7 @@ class Dialog : public QDialog
     QGroupBox *gbInfo;
 
     QPushButton *bWrite;
+    QPushButton *bCalibr;
 
     QSerialPort *itsPort;
     ComPort *itsComPort;
@@ -80,7 +81,6 @@ class Dialog : public QDialog
 
     void write(const CODE &code);
 
-    QStatusBar *itsStatusBar;
     QTimer *itsBlinkTimeTxNone;
     QTimer *itsBlinkTimeRxNone;
     QTimer *itsBlinkTimeTxColor;
@@ -94,6 +94,7 @@ private slots:
     void writeDP1();
     void writeDP2();
     void writeTemp();
+    void calibrate();
     void writePermanently();
     // мигание надписей "Rx" - при получении и "Tx" - при отправке пакета
     void colorTxNone();
