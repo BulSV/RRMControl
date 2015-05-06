@@ -31,10 +31,12 @@ private:
     int m_numResends;
     int m_currentResend;
 
+    QVector<int> m_calibrCoeffs;
+
     // преобразует word в byte
     int wordToInt(QByteArray ba);
     // определяет температуру
-    double sensorTemp(const QVector<int> &k, const int &ADC16);
+    double sensorTemp(const int &ADC16);
     // disintegrating number of byte by byte
     QByteArray intToByteArray(const int &value, const int &numBytes);
 };

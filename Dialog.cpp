@@ -27,10 +27,12 @@
 
 #define TEMPRANGE_MIN -50 // degrees Celsius
 #define TEMPRANGE_MAX 50 // degrees Celsius
+#define TEMPRANGE_STEP 1 // degrees Celsius
 #define NORMAL_TEMP 35 // degrees Celsius
 
 #define DPRANGE_MIN 0
 #define DPRANGE_MAX 1024
+#define DPRANGE_STEP 1
 
 #define DP1_DIGITS 4
 #define DP2_DIGITS 4
@@ -54,12 +56,12 @@ Dialog::Dialog(QWidget *parent) :
         bPortStop(new QPushButton(QString::fromUtf8("Stop"), this)),
         lTx(new QLabel("  Tx  ", this)),
         lRx(new QLabel("  Rx  ", this)),
-        sbSetDP1(new LCDSpinBox(QIcon(":/Resources/left.png"), QIcon(":/Resources/right.png"),
-                              QString::fromUtf8(""), QString::fromUtf8(""), LCDSpinBox::DEC_MODE, this)),
-        sbSetDP2(new LCDSpinBox(QIcon(":/Resources/left.png"), QIcon(":/Resources/right.png"),
-                              QString::fromUtf8(""), QString::fromUtf8(""), LCDSpinBox::DEC_MODE, this)),
-        sbSetTemp(new LCDSpinBox(QIcon(":/Resources/left.png"), QIcon(":/Resources/right.png"),
-                              QString::fromUtf8(""), QString::fromUtf8(""), LCDSpinBox::DEC_MODE, this)),
+        sbSetDP1(new LCDSpinBox(QIcon(":/Resources/down.png"), QIcon(":/Resources/up.png"),
+                              QString::fromUtf8(""), QString::fromUtf8(""), QLCDNumber::Dec, LCDSpinBox::RIGHT, this)),
+        sbSetDP2(new LCDSpinBox(QIcon(":/Resources/down.png"), QIcon(":/Resources/up.png"),
+                              QString::fromUtf8(""), QString::fromUtf8(""), QLCDNumber::Dec, LCDSpinBox::RIGHT, this)),
+        sbSetTemp(new LCDSpinBox(QIcon(":/Resources/down.png"), QIcon(":/Resources/up.png"),
+                              QString::fromUtf8(""), QString::fromUtf8(""), QLCDNumber::Dec, LCDSpinBox::RIGHT, this)),
         lcdDP1(new QLCDNumber(this)),
         lcdDP2(new QLCDNumber(this)),
         lcdSensorTemp(new QLCDNumber(this)),
@@ -77,7 +79,7 @@ Dialog::Dialog(QWidget *parent) :
         bWrite(new QPushButton(QString::fromUtf8("Write"), this)),
         bCalibr(new QPushButton(QString::fromUtf8("Calibrate"), this)),
         itsPort(new QSerialPort(this)),
-        itsComPort(new ComPort(itsPort, STARTBYTE, STOPBYTE, BYTESLENTH, false, this)),
+        itsComPort(new ComPort(itsPort, STARTBYTE, STOPBYTE, BYTESLENTH, true, this)),
         itsProtocol(new RRMProtocol(itsComPort, this)),
         itsBlinkTimeTxNone(new QTimer(this)),
         itsBlinkTimeRxNone(new QTimer(this)),
@@ -86,6 +88,24 @@ Dialog::Dialog(QWidget *parent) :
         itsTimeToDisplay(new QTimer(this))
 {
     setLayout(new QVBoxLayout(this));
+
+    dynamic_cast<QPushButton *>( sbSetDP1->buttonUpWidget() )->setMaximumSize(20, 20);
+    dynamic_cast<QPushButton *>( sbSetDP1->buttonDownWidget() )->setMaximumSize(20, 20);
+
+    dynamic_cast<QPushButton *>( sbSetDP2->buttonUpWidget() )->setMaximumSize(20, 20);
+    dynamic_cast<QPushButton *>( sbSetDP2->buttonDownWidget() )->setMaximumSize(20, 20);
+
+    dynamic_cast<QPushButton *>( sbSetTemp->buttonUpWidget() )->setMaximumSize(20, 20);
+    dynamic_cast<QPushButton *>( sbSetTemp->buttonDownWidget() )->setMaximumSize(20, 20);
+
+    bSetDP1->setMaximumSize(45, 45);
+    bSetDP1->setMinimumSize(45, 45);
+
+    bSetDP2->setMaximumSize(45, 45);
+    bSetDP2->setMinimumSize(45, 45);
+
+    bSetTemp->setMaximumSize(45, 45);
+    bSetTemp->setMinimumSize(45, 45);
 
     lTx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");
     lTx->setFrameStyle(QFrame::Box);
@@ -98,27 +118,27 @@ Dialog::Dialog(QWidget *parent) :
     lRx->setMargin(2);
 
     QGridLayout *gridDP1 = new QGridLayout;
-    gridDP1->addWidget(sbSetDP1, 0, 0, 1, 2);
-    gridDP1->addWidget(bSetDP1, 1, 0, 1, 2);
+    gridDP1->addWidget(sbSetDP1, 0, 0);
+    gridDP1->addWidget(bSetDP1, 0, 1);
 
     QGridLayout *gridDP2 = new QGridLayout;
-    gridDP2->addWidget(sbSetDP2, 0, 0, 1, 2);
-    gridDP2->addWidget(bSetDP2, 1, 0, 1, 2);
+    gridDP2->addWidget(sbSetDP2, 0, 0);
+    gridDP2->addWidget(bSetDP2, 0, 1);
 
     QGridLayout *gridTemp = new QGridLayout;
-    gridTemp->addWidget(sbSetTemp, 0, 0, 1, 2);
-    gridTemp->addWidget(bSetTemp, 1, 0, 1, 2);
+    gridTemp->addWidget(sbSetTemp, 0, 0);
+    gridTemp->addWidget(bSetTemp, 0, 1);
 
     gbSetDP1->setLayout(gridDP1);
     gbSetDP2->setLayout(gridDP2);
     gbSetTemp->setLayout(gridTemp);
 
     QGridLayout *gridConfig = new QGridLayout;
-    gridConfig->addWidget(gbSetDP1, 0, 0, 3, 2);
-    gridConfig->addWidget(gbSetDP2, 0, 3, 3, 2);
-    gridConfig->addWidget(gbSetTemp, 0, 5, 3, 2);
-    gridConfig->addWidget(bCalibr, 3, 0, 1, 2);
-    gridConfig->addWidget(bWrite, 3, 5, 1, 2);
+    gridConfig->addWidget(gbSetDP1, 0, 0, 1, 3);
+    gridConfig->addWidget(gbSetDP2, 0, 3, 1, 3);
+    gridConfig->addWidget(gbSetTemp, 0, 6, 1, 3);
+    gridConfig->addWidget(bCalibr, 1, 7);
+    gridConfig->addWidget(bWrite, 1, 8);
 
     gbConfig->setLayout(gridConfig);
 
@@ -195,9 +215,9 @@ Dialog::Dialog(QWidget *parent) :
     itsBlinkTimeRxColor->setInterval(BLINKTIMERX);
     itsTimeToDisplay->setInterval(DISPLAYTIME);
 
-    sbSetDP1->setRange(DPRANGE_MIN, DPRANGE_MAX);
-    sbSetDP2->setRange(DPRANGE_MIN, DPRANGE_MAX);
-    sbSetTemp->setRange(TEMPRANGE_MIN, TEMPRANGE_MAX);
+    sbSetDP1->setRange(DPRANGE_MIN, DPRANGE_MAX, DPRANGE_STEP);
+    sbSetDP2->setRange(DPRANGE_MIN, DPRANGE_MAX, DPRANGE_STEP);
+    sbSetTemp->setRange(TEMPRANGE_MIN, TEMPRANGE_MAX, TEMPRANGE_STEP);
     sbSetTemp->setValue(NORMAL_TEMP);
 
     QList<QLCDNumber*> list;
@@ -318,24 +338,15 @@ void Dialog::received(bool isReceived)
 
         QList<QString> strKeysList = itsProtocol->getReadedData().keys();
         for(int i = 0; i < itsProtocol->getReadedData().size(); ++i) {
-            if(strKeysList.at(i) == QString("CODE")
-                    && itsProtocol->getReadedData().value(strKeysList.at(i)) == QString::number(CODE_TEMP)) {
-                itsSensorsList.append(itsProtocol->getReadedData().value(strKeysList.at(i + 1)));
-#ifdef DEBUG
-                qDebug() << "QString::number(CODE_TEMP):" << itsProtocol->getReadedData().value(strKeysList.at(i));
-#endif
-            } else if(strKeysList.at(i) == QString("CODE")
-                      && (itsProtocol->getReadedData().value(strKeysList.at(i)) == QString::number(CODE_DP1))) {
-                itsDP1 = itsProtocol->getReadedData().value(strKeysList.at(i + 1));
-#ifdef DEBUG
-                qDebug() << "QString::number(CODE_DP1):" << itsProtocol->getReadedData().value(strKeysList.at(i));
-#endif
-            } else if(strKeysList.at(i) == QString("CODE")
-                      && itsProtocol->getReadedData().value(strKeysList.at(i)) == QString::number(CODE_DP2)) {
-                itsDP2 = itsProtocol->getReadedData().value(strKeysList.at(i + 1));
-#ifdef DEBUG
-                qDebug() << "QString::number(CODE_DP2):" << itsProtocol->getReadedData().value(strKeysList.at(i));
-#endif
+            if(strKeysList.at(i) == QString("TEMP")) {
+                itsSensorsList.append(itsProtocol->getReadedData().value(strKeysList.at(i)));
+
+            } else if(strKeysList.at(i) == QString("DP1")) {
+                itsDP1 = itsProtocol->getReadedData().value(strKeysList.at(i));
+
+            } else if(strKeysList.at(i) == QString("DP2")) {
+                itsDP2 = itsProtocol->getReadedData().value(strKeysList.at(i));
+
             }
         }
     }
@@ -354,7 +365,7 @@ void Dialog::write(const Dialog::CODE &code)
         QString codeStr;
         QString data;
 
-        switch (static_cast<int>(code)) {
+        switch ( static_cast<int>(code) ) {
         case 0:
             codeStr = QString::number(CODE_WRITE);
             data = QString::number(NONE_DATA);

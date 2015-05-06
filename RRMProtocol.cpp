@@ -1,8 +1,8 @@
 #include "RRMProtocol.h"
 
-#ifdef DEBUG
+//#ifdef DEBUG
 #include <QDebug>
-#endif
+//#endif
 
 #define STARTBYTE 0x55
 #define STOPBYTE 0xAA
@@ -28,9 +28,15 @@ RRMProtocol::RRMProtocol(ComPort *comPort, QObject *parent) :
 {
     m_resend->setInterval(100);
 
+    m_calibrCoeffs.push_back(40781);
+    m_calibrCoeffs.push_back(32791);
+    m_calibrCoeffs.push_back(36016);
+    m_calibrCoeffs.push_back(24926);
+    m_calibrCoeffs.push_back(28446);
+
     connect(itsComPort, SIGNAL(DataIsReaded(bool)), this, SLOT(readData(bool)));
     connect(itsComPort, SIGNAL(DataIsWrited(bool)), this, SIGNAL(DataIsWrited(bool)));
-    connect(m_resend, SIGNAL(timeout()), this, SLOT(writeData()));
+//    connect(m_resend, SIGNAL(timeout()), this, SLOT(writeData()));
 }
 
 void RRMProtocol::setDataToWrite(const QMultiMap<QString, QString> &data)
@@ -56,35 +62,43 @@ void RRMProtocol::readData(bool isReaded)
 
         if( static_cast<int>(ba.at(1)) < 0x10 ) {
 
+            qDebug() << "QString::number(wordToInt(ba.mid(1, 2)))" << QString::number(wordToInt(ba.mid(1, 2)));
+            qDebug() << "QString::number(wordToInt(ba.mid(3, 2)))" << QString::number(wordToInt(ba.mid(3, 2)));
+            qDebug() << "QString::number(wordToInt(sensorTemp(ba.mid(5, 2))), FORMAT, PRECISION)" << QString::number(sensorTemp(wordToInt(ba.mid(5, 2))), FORMAT, PRECISION);
             itsReadData.insert(QString("DP1"),
-                               QString::number(wordToInt(ba.mid(2, 2)), FORMAT, PRECISION));
+                               QString::number(wordToInt(ba.mid(1, 2))));
             itsReadData.insert(QString("DP2"),
-                               QString::number(wordToInt(ba.mid(4, 2)), FORMAT, PRECISION));
+                               QString::number(wordToInt(ba.mid(3, 2))));
             itsReadData.insert(QString("TEMP"),
-                               QString::number(wordToInt(ba.mid(6, 2)), FORMAT, PRECISION));
+                               QString::number(sensorTemp(wordToInt(ba.mid(5, 2))), FORMAT, PRECISION));
 
         } else {
 
             switch ( static_cast<int>(ba.at(1)) ) {
             case 0x10:
-                itsReadData.insert(QString("K0"),
-                                   QString::number(wordToInt(ba.mid(2, 2)), FORMAT, PRECISION));
+//                itsReadData.insert(QString("K0"),
+//                                   QString::number(wordToInt(ba.mid(2, 2)), FORMAT, PRECISION));
+                m_calibrCoeffs.replace(0, wordToInt(ba.mid(2, 2)));
                 break;
             case 0x11:
-                itsReadData.insert(QString("K1"),
-                                   QString::number(wordToInt(ba.mid(2, 2)), FORMAT, PRECISION));
+//                itsReadData.insert(QString("K1"),
+//                                   QString::number(wordToInt(ba.mid(2, 2)), FORMAT, PRECISION));
+                m_calibrCoeffs.replace(1, wordToInt(ba.mid(2, 2)));
                 break;
             case 0x12:
-                itsReadData.insert(QString("K2"),
-                                   QString::number(wordToInt(ba.mid(2, 2)), FORMAT, PRECISION));
+//                itsReadData.insert(QString("K2"),
+//                                   QString::number(wordToInt(ba.mid(2, 2)), FORMAT, PRECISION));
+                m_calibrCoeffs.replace(2, wordToInt(ba.mid(2, 2)));
                 break;
             case 0x13:
-                itsReadData.insert(QString("K3"),
-                                   QString::number(wordToInt(ba.mid(2, 2)), FORMAT, PRECISION));
+//                itsReadData.insert(QString("K3"),
+//                                   QString::number(wordToInt(ba.mid(2, 2)), FORMAT, PRECISION));
+                m_calibrCoeffs.replace(3, wordToInt(ba.mid(2, 2)));
                 break;
             case 0x14:
-                itsReadData.insert(QString("K4"),
-                                   QString::number(wordToInt(ba.mid(2, 2)), FORMAT, PRECISION));
+//                itsReadData.insert(QString("K4"),
+//                                   QString::number(wordToInt(ba.mid(2, 2)), FORMAT, PRECISION));
+                m_calibrCoeffs.replace(4, wordToInt(ba.mid(2, 2)));
                 break;
             }
 
@@ -174,12 +188,12 @@ int RRMProtocol::wordToInt(QByteArray ba)
 }
 
 // определяет температуру
-double RRMProtocol::sensorTemp(const QVector<int> &k, const int &ADC16)
+double RRMProtocol::sensorTemp(const int &ADC16)
 {
-    double temp = 0.01 * ( (-1.5)*k.at(4) + ADC16*0.0001 *
-                           (k.at(3) + ADC16*0.00001 *
-                            ( (-2)*k.at(2) + ADC16*0.00001 *
-                              (4*k.at(1) + (-2)*0.00001*k.at(0)*ADC16 ) ) ) );
+    double temp = 0.01 * ( (-1.5)*m_calibrCoeffs.at(0) + ADC16*0.0001 *
+                           (m_calibrCoeffs.at(1) + ADC16*0.00001 *
+                            ( (-2)*m_calibrCoeffs.at(2) + ADC16*0.00001 *
+                              (4*m_calibrCoeffs.at(3) + (-2)*0.00001*m_calibrCoeffs.at(4)*ADC16 ) ) ) );
 
     return temp;
 }

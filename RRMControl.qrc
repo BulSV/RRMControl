@@ -4,5 +4,7 @@
         <file>Resources/left.png</file>
         <file>Resources/right.png</file>
         <file>Resources/RRMControl.png</file>
+        <file>Resources/up.png</file>
+        <file>Resources/down.png</file>
     </qresource>
 </RCC>
