@@ -24,8 +24,8 @@ private slots:
 private:
     ComPort *itsComPort;
 
-    QMultiMap<QString, QString> itsWriteData;
-    QMultiMap<QString, QString> itsReadData;
+    QMultiMap<QString, QString> m_WriteData;
+    QMultiMap<QString, QString> m_ReadData;
 
     QTimer *m_resend;
     int m_numResends;
@@ -33,11 +33,11 @@ private:
 
     QVector<int> m_calibrCoeffs;
 
-    // преобразует word в byte
+    // converting 2 bytes to int
     int wordToInt(QByteArray ba);
-    // определяет температуру
+    // calculate temperature
     double sensorTemp(const int &ADC16);
-    // disintegrating number of byte by byte
+    // converting number to byte array
     QByteArray intToByteArray(const int &value, const int &numBytes);
 };
 

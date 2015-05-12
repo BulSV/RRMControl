@@ -80,9 +80,6 @@ QByteArray ComPort::getWriteData() const
 void ComPort::privateWriteData()
 {
     if( (itsPort->openMode() != QSerialPort::ReadOnly) && itsPort->isOpen() ) {
-#ifdef DEBUG
-        qDebug() << "void ComPort::privateWriteData():" << itsWriteData;
-#endif
         itsPort->write(itsWriteData);
         emit DataIsWrited(true);
         emit WritedData(itsWriteData);

@@ -1,8 +1,4 @@
-greaterThan(QT_MAJOR_VERSION, 4) {
-    QT       += widgets serialport
-} else {
-    include($$QTSERIALPORT_PROJECT_ROOT/src/serialport/qt4support/serialport.prf)
-}
+QT       += widgets serialport
 
 TEMPLATE = app
 win32:RC_FILE = RRMControl.rc
@@ -40,19 +36,13 @@ HEADERS += \
     ComPort.h \
     Dialog.h \
     IProtocol.h \
-    RRMProtocol.h \
-    SpinBoxButton.h \
-    ISpinBox.h \
-    LCDSpinBox.h
+    RRMProtocol.h
 
 SOURCES += \
     ComPort.cpp \
     Dialog.cpp \
     main.cpp \
-    RRMProtocol.cpp \
-    ISpinBox.cpp \
-    LCDSpinBox.cpp \
-    SpinBoxButton.cpp
+    RRMProtocol.cpp
 
 RESOURCES += \
     RRMControl.qrc

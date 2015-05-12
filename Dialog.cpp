@@ -1,5 +1,4 @@
 #include "Dialog.h"
-#include "LCDSpinBox.h"
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QGridLayout>
@@ -23,24 +22,20 @@
 #define BLINKTIMERX 500 // ms
 #define DISPLAYTIME 100 // ms
 
-#define REWINDTIME 50 // ms
-
 #define TEMPRANGE_MIN -50 // degrees Celsius
 #define TEMPRANGE_MAX 50 // degrees Celsius
-#define TEMPRANGE_STEP 1 // degrees Celsius
 #define NORMAL_TEMP 35 // degrees Celsius
 
 #define DPRANGE_MIN 0
 #define DPRANGE_MAX 1024
-#define DPRANGE_STEP 1
 
-#define DP1_DIGITS 4
-#define DP2_DIGITS 4
+#define OFFSET_DIGITS 4
+#define GAIN_DIGITS 4
 #define TEMP_DIGITS 6
 
 #define CODE_WRITE 0x00
-#define CODE_DP1 0x01
-#define CODE_DP2 0x02
+#define CODE_OFFSET 0x01
+#define CODE_GAIN 0x02
 #define CODE_TEMP 0x03
 #define CODE_CALIBR 0x04
 
@@ -56,66 +51,44 @@ Dialog::Dialog(QWidget *parent) :
         bPortStop(new QPushButton(QString::fromUtf8("Stop"), this)),
         lTx(new QLabel("  Tx  ", this)),
         lRx(new QLabel("  Rx  ", this)),
-//        sbSetDP1(new LCDSpinBox(QIcon(":/Resources/down.png"), QIcon(":/Resources/up.png"),
-//                              QString::fromUtf8(""), QString::fromUtf8(""), QLCDNumber::Dec, LCDSpinBox::RIGHT, this)),
-//        sbSetDP2(new LCDSpinBox(QIcon(":/Resources/down.png"), QIcon(":/Resources/up.png"),
-//                              QString::fromUtf8(""), QString::fromUtf8(""), QLCDNumber::Dec, LCDSpinBox::RIGHT, this)),
-//        sbSetTemp(new LCDSpinBox(QIcon(":/Resources/down.png"), QIcon(":/Resources/up.png"),
-//                              QString::fromUtf8(""), QString::fromUtf8(""), QLCDNumber::Dec, LCDSpinBox::RIGHT, this)),
-        sbSetDP1(new QSpinBox(this)),
-        sbSetDP2(new QSpinBox(this)),
+        sbSetOffset(new QSpinBox(this)),
+        sbSetGain(new QSpinBox(this)),
         sbSetTemp(new QSpinBox(this)),
-        lcdDP1(new QLCDNumber(this)),
-        lcdDP2(new QLCDNumber(this)),
-        lcdSensorTemp(new QLCDNumber(this)),
-        lDP1(new QLabel(QString::fromUtf8("Offset:"), this)),
-        lDP2(new QLabel(QString::fromUtf8("Gain:"), this)),
-        lSensor(new QLabel(QString::fromUtf8("Sensor, °C:"), this)),
-        bSetDP1(new QPushButton(QString::fromUtf8("Set"), this)),
-        bSetDP2(new QPushButton(QString::fromUtf8("Set"), this)),
+        m_lcdOffset(new QLCDNumber(this)),
+        m_lcdGain(new QLCDNumber(this)),
+        m_lcdTemp(new QLCDNumber(this)),
+        lOffset(new QLabel(QString::fromUtf8("Offset:"), this)),
+        lGain(new QLabel(QString::fromUtf8("Gain:"), this)),
+        lTemp(new QLabel(QString::fromUtf8("Sensor, °C:"), this)),
+        bSetOffset(new QPushButton(QString::fromUtf8("Set"), this)),
+        bSetGain(new QPushButton(QString::fromUtf8("Set"), this)),
         bSetTemp(new QPushButton(QString::fromUtf8("Set"), this)),
-        gbSetDP1(new QGroupBox(QString::fromUtf8("Offset"), this)),
-        gbSetDP2(new QGroupBox(QString::fromUtf8("Gain"), this)),
+        gbSetOffset(new QGroupBox(QString::fromUtf8("Offset"), this)),
+        gbSetGain(new QGroupBox(QString::fromUtf8("Gain"), this)),
         gbSetTemp(new QGroupBox(QString::fromUtf8("Temperature, °C"), this)),
         gbConfig(new QGroupBox(QString::fromUtf8("Configure"), this)),
         gbInfo(new QGroupBox(QString::fromUtf8("Information"), this)),
         bWrite(new QPushButton(QString::fromUtf8("Write"), this)),
         bCalibr(new QPushButton(QString::fromUtf8("Calibrate"), this)),
-        itsPort(new QSerialPort(this)),
-        itsComPort(new ComPort(itsPort, STARTBYTE, STOPBYTE, BYTESLENTH, true, this)),
-        itsProtocol(new RRMProtocol(itsComPort, this)),
-        itsBlinkTimeTxNone(new QTimer(this)),
-        itsBlinkTimeRxNone(new QTimer(this)),
-        itsBlinkTimeTxColor(new QTimer(this)),
-        itsBlinkTimeRxColor(new QTimer(this)),
-        itsTimeToDisplay(new QTimer(this)),
-        m_isDP1Set(false),
-        m_isDp2Set(false),
-        m_isTempSet(false)
+        m_Port(new QSerialPort(this)),
+        m_ComPort(new ComPort(m_Port, STARTBYTE, STOPBYTE, BYTESLENTH, true, this)),
+        m_Protocol(new RRMProtocol(m_ComPort, this)),
+        m_BlinkTimeTxNone(new QTimer(this)),
+        m_BlinkTimeRxNone(new QTimer(this)),
+        m_BlinkTimeTxColor(new QTimer(this)),
+        m_BlinkTimeRxColor(new QTimer(this)),
+        m_TimeToDisplay(new QTimer(this))
 {
-//    dynamic_cast<QPushButton *>( sbSetDP1->buttonUpWidget() )->setMaximumSize(20, 20);
-//    dynamic_cast<QPushButton *>( sbSetDP1->buttonDownWidget() )->setMaximumSize(20, 20);
+    initIsDataSet();
 
-//    dynamic_cast<QPushButton *>( sbSetDP2->buttonUpWidget() )->setMaximumSize(20, 20);
-//    dynamic_cast<QPushButton *>( sbSetDP2->buttonDownWidget() )->setMaximumSize(20, 20);
+    bSetOffset->setMaximumSize(60, 30);
+    bSetOffset->setMinimumSize(60, 30);
 
-//    dynamic_cast<QPushButton *>( sbSetTemp->buttonUpWidget() )->setMaximumSize(20, 20);
-//    dynamic_cast<QPushButton *>( sbSetTemp->buttonDownWidget() )->setMaximumSize(20, 20);
-
-    bSetDP1->setMaximumSize(60, 30);
-    bSetDP1->setMinimumSize(60, 30);
-
-    bSetDP2->setMaximumSize(60, 30);
-    bSetDP2->setMinimumSize(60, 30);
+    bSetGain->setMaximumSize(60, 30);
+    bSetGain->setMinimumSize(60, 30);
 
     bSetTemp->setMaximumSize(60, 30);
     bSetTemp->setMinimumSize(60, 30);
-
-//    bCalibr->setMaximumSize(80, 30);
-//    bCalibr->setMinimumSize(80, 30);
-
-//    bWrite->setMaximumSize(80, 30);
-//    bWrite->setMinimumSize(80, 30);
 
     bCalibr->setMinimumHeight(30);
     bCalibr->setMaximumHeight(30);
@@ -133,25 +106,25 @@ Dialog::Dialog(QWidget *parent) :
     lRx->setAlignment(Qt::AlignCenter);
     lRx->setMargin(2);
 
-    QGridLayout *gridDP1 = new QGridLayout;
-    gridDP1->addWidget(sbSetDP1, 0, 0);
-    gridDP1->addWidget(bSetDP1, 1, 0);
+    QGridLayout *gridOffset = new QGridLayout;
+    gridOffset->addWidget(sbSetOffset, 0, 0);
+    gridOffset->addWidget(bSetOffset, 1, 0);
 
-    QGridLayout *gridDP2 = new QGridLayout;
-    gridDP2->addWidget(sbSetDP2, 0, 0);
-    gridDP2->addWidget(bSetDP2, 1, 0);
+    QGridLayout *gridGain = new QGridLayout;
+    gridGain->addWidget(sbSetGain, 0, 0);
+    gridGain->addWidget(bSetGain, 1, 0);
 
     QGridLayout *gridTemp = new QGridLayout;
     gridTemp->addWidget(sbSetTemp, 0, 0);
     gridTemp->addWidget(bSetTemp, 1, 0);
 
-    gbSetDP1->setLayout(gridDP1);
-    gbSetDP2->setLayout(gridDP2);
+    gbSetOffset->setLayout(gridOffset);
+    gbSetGain->setLayout(gridGain);
     gbSetTemp->setLayout(gridTemp);
 
     QGridLayout *gridConfig = new QGridLayout;
-    gridConfig->addWidget(gbSetDP1, 0, 0, 1, 2);
-    gridConfig->addWidget(gbSetDP2, 0, 2, 1, 2);
+    gridConfig->addWidget(gbSetOffset, 0, 0, 1, 2);
+    gridConfig->addWidget(gbSetGain, 0, 2, 1, 2);
     gridConfig->addWidget(gbSetTemp, 0, 4, 1, 2);
     gridConfig->addWidget(bCalibr, 1, 2, 1, 2);
     gridConfig->addWidget(bWrite, 1, 4, 1, 2);
@@ -160,25 +133,25 @@ Dialog::Dialog(QWidget *parent) :
 
     QFrame *frame1 = new QFrame(this);
     frame1->setFrameStyle(QFrame::Box | QFrame::Sunken);
-    lDP1->setMargin(5);
+    lOffset->setMargin(5);
 
     QFrame *frame2 = new QFrame(this);
     frame2->setFrameStyle(QFrame::Box | QFrame::Sunken);
-    lDP2->setMargin(5);
+    lGain->setMargin(5);
 
     QFrame *frame3 = new QFrame(this);
     frame3->setFrameStyle(QFrame::Box | QFrame::Sunken);
-    lSensor->setMargin(5);
+    lTemp->setMargin(5);
 
     QGridLayout *gridInfo = new QGridLayout;
-    gridInfo->addWidget(lDP1, 0, 0);
-    gridInfo->addWidget(lcdDP1, 0, 1);
+    gridInfo->addWidget(lOffset, 0, 0);
+    gridInfo->addWidget(m_lcdOffset, 0, 1);
     gridInfo->addWidget(frame1, 0, 0, 1, 2);
-    gridInfo->addWidget(lDP2, 0, 2);
-    gridInfo->addWidget(lcdDP2, 0, 3);
+    gridInfo->addWidget(lGain, 0, 2);
+    gridInfo->addWidget(m_lcdGain, 0, 3);
     gridInfo->addWidget(frame2, 0, 2, 1, 2);
-    gridInfo->addWidget(lSensor, 0, 4);
-    gridInfo->addWidget(lcdSensorTemp, 0, 5);
+    gridInfo->addWidget(lTemp, 0, 4);
+    gridInfo->addWidget(m_lcdTemp, 0, 5);
     gridInfo->addWidget(frame3, 0, 4, 1, 2);
     gridInfo->setSpacing(5);
 
@@ -189,7 +162,7 @@ Dialog::Dialog(QWidget *parent) :
     grid->addWidget(cbPort, 0, 1);
     grid->addWidget(lBaud, 1, 0);
     grid->addWidget(cbBaud, 1, 1);
-    // пещаю логотип фирмы
+    // Inserting company logo
     grid->addWidget(new QLabel("<img src=':/Resources/elisat.png' height='40' width='150'/>", this), 0, 3, 2, 4, Qt::AlignRight);
     grid->addWidget(bPortStart, 2, 1);
     grid->addWidget(bPortStop, 2, 2);
@@ -205,7 +178,7 @@ Dialog::Dialog(QWidget *parent) :
     layout()->addWidget(gbInfo);
     layout()->setSpacing(5);
 
-    // делает окно фиксированного размера
+    // made window of app fixed size
     this->layout()->setSizeConstraint(QLayout::SetFixedSize);
 
     QStringList portsNames;
@@ -217,7 +190,7 @@ Dialog::Dialog(QWidget *parent) :
 
     cbPort->addItems(portsNames);
 #if defined (Q_OS_LINUX)
-    cbPort->setEditable(true); // TODO Make correct viewing available ports in Linux
+    cbPort->setEditable(true); // TODO Make correct viewing available virtual ports in Linux
 #else
     cbPort->setEditable(false);
 #endif
@@ -228,25 +201,22 @@ Dialog::Dialog(QWidget *parent) :
     cbBaud->setEditable(false);
     bPortStop->setEnabled(false);
 
-    itsBlinkTimeTxNone->setInterval(BLINKTIMETX);
-    itsBlinkTimeRxNone->setInterval(BLINKTIMERX);
-    itsBlinkTimeTxColor->setInterval(BLINKTIMETX);
-    itsBlinkTimeRxColor->setInterval(BLINKTIMERX);
-    itsTimeToDisplay->setInterval(DISPLAYTIME);
+    m_BlinkTimeTxNone->setInterval(BLINKTIMETX);
+    m_BlinkTimeRxNone->setInterval(BLINKTIMERX);
+    m_BlinkTimeTxColor->setInterval(BLINKTIMETX);
+    m_BlinkTimeRxColor->setInterval(BLINKTIMERX);
+    m_TimeToDisplay->setInterval(DISPLAYTIME);
 
-    sbSetDP1->setRange(DPRANGE_MIN, DPRANGE_MAX/*, DPRANGE_STEP*/);
-    sbSetDP1->setAlignment(Qt::AlignCenter);
-    sbSetDP2->setRange(DPRANGE_MIN, DPRANGE_MAX/*, DPRANGE_STEP*/);
-    sbSetDP2->setAlignment(Qt::AlignCenter);
-    sbSetTemp->setRange(TEMPRANGE_MIN, TEMPRANGE_MAX/*, TEMPRANGE_STEP*/);
+    sbSetOffset->setRange(DPRANGE_MIN, DPRANGE_MAX);
+    sbSetOffset->setAlignment(Qt::AlignCenter);
+    sbSetGain->setRange(DPRANGE_MIN, DPRANGE_MAX);
+    sbSetGain->setAlignment(Qt::AlignCenter);
+    sbSetTemp->setRange(TEMPRANGE_MIN, TEMPRANGE_MAX);
     sbSetTemp->setAlignment(Qt::AlignCenter);
     sbSetTemp->setValue(NORMAL_TEMP);
 
     QList<QLCDNumber*> list;
-    list << lcdDP1 << lcdDP2 << lcdSensorTemp;
-//         << dynamic_cast<QLCDNumber*>(sbSetDP1->spinWidget())
-//         << dynamic_cast<QLCDNumber*>(sbSetDP2->spinWidget())
-//         << dynamic_cast<QLCDNumber*>(sbSetTemp->spinWidget());
+    list << m_lcdOffset << m_lcdGain << m_lcdTemp;
     foreach(QLCDNumber *lcd, list) {
         lcd->setMinimumSize(80, 25);
         lcd->setMaximumSize(80, 25);
@@ -255,12 +225,10 @@ Dialog::Dialog(QWidget *parent) :
         lcd->display("----");
     }
 
-    colorSetTempLCD();
-
-    lcdDP1->setDigitCount(DP1_DIGITS);
-    lcdDP2->setDigitCount(DP2_DIGITS);
-    lcdSensorTemp->setDigitCount(TEMP_DIGITS);
-    lcdSensorTemp->display("---.--");
+    m_lcdOffset->setDigitCount(OFFSET_DIGITS);
+    m_lcdGain->setDigitCount(GAIN_DIGITS);
+    m_lcdTemp->setDigitCount(TEMP_DIGITS);
+    m_lcdTemp->display("---.--");
 
     connect(bPortStart, SIGNAL(clicked()), this, SLOT(openPort()));
     connect(bPortStop, SIGNAL(clicked()), this, SLOT(closePort()));
@@ -268,21 +236,18 @@ Dialog::Dialog(QWidget *parent) :
     connect(cbPort, SIGNAL(currentIndexChanged(int)), this, SLOT(closePort()));
     connect(cbBaud, SIGNAL(currentIndexChanged(int)), this, SLOT(closePort()));
 
-    connect(itsProtocol, SIGNAL(DataIsReaded(bool)), this, SLOT(received(bool)));
+    connect(m_Protocol, SIGNAL(DataIsReaded(bool)), this, SLOT(received(bool)));
 
-    connect(itsBlinkTimeTxColor, SIGNAL(timeout()), this, SLOT(colorIsTx()));
-    connect(itsBlinkTimeRxColor, SIGNAL(timeout()), this, SLOT(colorIsRx()));
-    connect(itsBlinkTimeTxNone, SIGNAL(timeout()), this, SLOT(colorTxNone()));
-    connect(itsBlinkTimeRxNone, SIGNAL(timeout()), this, SLOT(colorRxNone()));
+    connect(m_BlinkTimeTxColor, SIGNAL(timeout()), this, SLOT(colorIsTx()));
+    connect(m_BlinkTimeRxColor, SIGNAL(timeout()), this, SLOT(colorIsRx()));
+    connect(m_BlinkTimeTxNone, SIGNAL(timeout()), this, SLOT(colorTxNone()));
+    connect(m_BlinkTimeRxNone, SIGNAL(timeout()), this, SLOT(colorRxNone()));
 
-    connect(itsTimeToDisplay, SIGNAL(timeout()), this, SLOT(displayTemp()));
-    connect(itsTimeToDisplay, SIGNAL(timeout()), this, SLOT(displayDP()));
+    connect(m_TimeToDisplay, SIGNAL(timeout()), this, SLOT(displayData()));
 
     connect(bSetTemp, SIGNAL(clicked()), this, SLOT(writeTemp()));
-    connect(bSetDP1, SIGNAL(clicked()), this, SLOT(writeDP1()));
-    connect(bSetDP2, SIGNAL(clicked()), this, SLOT(writeDP2()));
-
-//    connect(sbSetTemp, SIGNAL(valueChanged()), this, SLOT(colorSetTempLCD()));
+    connect(bSetOffset, SIGNAL(clicked()), this, SLOT(writeOffset()));
+    connect(bSetGain, SIGNAL(clicked()), this, SLOT(writeGain()));
 
     connect(bWrite, SIGNAL(clicked()), this, SLOT(writePermanently()));
     connect(bCalibr, SIGNAL(clicked()), this, SLOT(calibrate()));
@@ -293,34 +258,34 @@ Dialog::Dialog(QWidget *parent) :
 
 Dialog::~Dialog()
 {
-    itsPort->close();
+    m_Port->close();
 }
 
 void Dialog::openPort()
 {
-    itsPort->close();
-    itsPort->setPortName(cbPort->currentText());
+    m_Port->close();
+    m_Port->setPortName(cbPort->currentText());
 
-    if(itsPort->open(QSerialPort::ReadWrite))
+    if(m_Port->open(QSerialPort::ReadWrite))
     {
         switch (cbBaud->currentIndex()) {
         case 0:
-            itsPort->setBaudRate(QSerialPort::Baud115200);
+            m_Port->setBaudRate(QSerialPort::Baud115200);
             break;
         case 1:
-            itsPort->setBaudRate(QSerialPort::Baud57600);
+            m_Port->setBaudRate(QSerialPort::Baud57600);
             break;
         case 2:
-            itsPort->setBaudRate(QSerialPort::Baud38400);
+            m_Port->setBaudRate(QSerialPort::Baud38400);
             break;
         default:
-            itsPort->setBaudRate(QSerialPort::Baud115200);
+            m_Port->setBaudRate(QSerialPort::Baud115200);
             break;
         }
 
-        itsPort->setDataBits(QSerialPort::Data8);
-        itsPort->setParity(QSerialPort::NoParity);
-        itsPort->setFlowControl(QSerialPort::NoFlowControl);
+        m_Port->setDataBits(QSerialPort::Data8);
+        m_Port->setParity(QSerialPort::NoParity);
+        m_Port->setFlowControl(QSerialPort::NoFlowControl);
 
         bPortStart->setEnabled(false);
         bPortStop->setEnabled(true);
@@ -334,29 +299,11 @@ void Dialog::openPort()
     }
 }
 
-void Dialog::closePort()
+void Dialog::defaultColorLCD(QLCDNumber *lcd)
 {
-    itsPort->close();
-    itsBlinkTimeTxNone->stop();
-    itsBlinkTimeTxColor->stop();
-    itsBlinkTimeRxNone->stop();
-    itsBlinkTimeRxColor->stop();
-    lTx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");
-    lRx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");
-    bPortStop->setEnabled(false);
-    bPortStart->setEnabled(true);
-    itsProtocol->resetProtocol();
-
-    m_isDP1Set = false;
-    m_isDp2Set = false;
-    m_isTempSet = false;
-    lcdDP1->display("----");
-    lcdDP2->display("----");
-    lcdSensorTemp->display("---.--");
-
     QPalette palette;
     // get the palette
-    palette = lcdSensorTemp->palette();
+    palette = lcd->palette();
 
     // foreground color
     palette.setColor(palette.WindowText, QColor(0, 0, 0));
@@ -366,44 +313,56 @@ void Dialog::closePort()
     palette.setColor(palette.Dark, QColor(0, 0, 0));
 
     // set the palette
-    lcdSensorTemp->setPalette(palette);
+    lcd->setPalette(palette);
+}
+
+void Dialog::closePort()
+{
+    m_Port->close();
+    m_BlinkTimeTxNone->stop();
+    m_BlinkTimeTxColor->stop();
+    m_BlinkTimeRxNone->stop();
+    m_BlinkTimeRxColor->stop();
+    lTx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");
+    lRx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");
+    bPortStop->setEnabled(false);
+    bPortStart->setEnabled(true);
+    m_Protocol->resetProtocol();
+
+    initIsDataSet();
+    m_lcdOffset->display("----");
+    m_lcdGain->display("----");
+    m_lcdTemp->display("---.--");
+
+    QList<QLCDNumber*> lcdList = QList<QLCDNumber*>() << m_lcdOffset << m_lcdGain << m_lcdTemp;
+    foreach (QLCDNumber *lcd, lcdList) {
+        defaultColorLCD(lcd);
+    }
 }
 
 void Dialog::received(bool isReceived)
 {
     if(isReceived) {
-        if(!itsBlinkTimeRxColor->isActive() && !itsBlinkTimeRxNone->isActive()) {
-            itsBlinkTimeRxColor->start();
+        if(!m_BlinkTimeRxColor->isActive() && !m_BlinkTimeRxNone->isActive()) {
+            m_BlinkTimeRxColor->start();
             lRx->setStyleSheet("background: green; font: bold; font-size: 10pt");
         }
 
-        if(!itsTimeToDisplay->isActive()) {
-            itsTimeToDisplay->start();
+        if(!m_TimeToDisplay->isActive()) {
+            m_TimeToDisplay->start();
         }
 
-        QList<QString> strKeysList = itsProtocol->getReadedData().keys();
-        for(int i = 0; i < itsProtocol->getReadedData().size(); ++i) {
-            if(strKeysList.at(i) == QString("TEMP")) {
-                itsSensorsList.append(itsProtocol->getReadedData().value(strKeysList.at(i)));
-
-            } else if(strKeysList.at(i) == QString("DP1")) {
-                itsDP1 = itsProtocol->getReadedData().value(strKeysList.at(i));
-
-            } else if(strKeysList.at(i) == QString("DP2")) {
-                itsDP2 = itsProtocol->getReadedData().value(strKeysList.at(i));
-
-            }
-        }
+        m_DisplayList = m_Protocol->getReadedData();        
     }
 }
 
 void Dialog::write(const Dialog::CODE &code)
 {
-    if(itsPort->isOpen()) {
+    if(m_Port->isOpen()) {
         QMultiMap<QString, QString> dataTemp;
 
-        if(!itsBlinkTimeTxColor->isActive() && !itsBlinkTimeTxNone->isActive()) {
-            itsBlinkTimeTxColor->start();
+        if(!m_BlinkTimeTxColor->isActive() && !m_BlinkTimeTxNone->isActive()) {
+            m_BlinkTimeTxColor->start();
             lTx->setStyleSheet("background: red; font: bold; font-size: 10pt");
         }
 
@@ -416,19 +375,19 @@ void Dialog::write(const Dialog::CODE &code)
             data = QString::number(NONE_DATA);
             break;
         case 1:
-            codeStr = QString::number(CODE_DP1);
-            data = QString::number(sbSetDP1->value());
-            m_isDP1Set = true;
+            codeStr = QString::number(CODE_OFFSET);
+            data = QString::number(sbSetOffset->value());
+            m_isDataSet.insert("OFFSET", true);
             break;
         case 2:
-            codeStr = QString::number(CODE_DP2);
-            data = QString::number(sbSetDP2->value());
-            m_isDp2Set = true;
+            codeStr = QString::number(CODE_GAIN);
+            data = QString::number(sbSetGain->value());
+            m_isDataSet.insert("GAIN", true);
             break;
         case 3:
             codeStr = QString::number(CODE_TEMP);
             data = QString::number(sbSetTemp->value());
-            m_isTempSet = true;
+            m_isDataSet.insert("TEMP", true);
             break;
         case 4:
             codeStr = QString::number(CODE_CALIBR);
@@ -440,19 +399,19 @@ void Dialog::write(const Dialog::CODE &code)
         }
         dataTemp.insert("CODE", codeStr);
         dataTemp.insert("DATA", data);
-        itsProtocol->setDataToWrite(dataTemp);
-        itsProtocol->writeData();
+        m_Protocol->setDataToWrite(dataTemp);
+        m_Protocol->writeData();
     }
 }
 
-void Dialog::writeDP1()
+void Dialog::writeOffset()
 {
-    write(DP1);
+    write(OFFSET);
 }
 
-void Dialog::writeDP2()
+void Dialog::writeGain()
 {
-    write(DP2);
+    write(GAIN);
 }
 
 void Dialog::writeTemp()
@@ -472,7 +431,7 @@ void Dialog::writePermanently()
 
 void Dialog::colorTxNone()
 {
-    itsBlinkTimeTxNone->stop();
+    m_BlinkTimeTxNone->stop();
 }
 
 void Dialog::setColorLCD(QLCDNumber *lcd, bool isHeat)
@@ -524,117 +483,70 @@ QString &Dialog::addTrailingZeros(QString &str, int prec)
 void Dialog::colorIsRx()
 {
     lRx->setStyleSheet("background: none; font: bold; font-size: 10pt");
-    itsBlinkTimeRxColor->stop();
-    itsBlinkTimeRxNone->start();
+    m_BlinkTimeRxColor->stop();
+    m_BlinkTimeRxNone->start();
 }
 
 void Dialog::colorRxNone()
 {
-    itsBlinkTimeRxNone->stop();
+    m_BlinkTimeRxNone->stop();
 }
 
 void Dialog::colorIsTx()
 {
     lTx->setStyleSheet("background: none; font: bold; font-size: 10pt");
-    itsBlinkTimeTxColor->stop();
-    itsBlinkTimeTxNone->start();
+    m_BlinkTimeTxColor->stop();
+    m_BlinkTimeTxNone->start();
 }
 
-void Dialog::displayTemp()
+void Dialog::displayData()
 {
-#ifdef DEBUG
-    qDebug() << "void Dialog::displayTemp()";
-#endif
-    itsTimeToDisplay->stop();
+    m_TimeToDisplay->stop();
 
-    if(!m_isTempSet) {
+    QMap<QString, QLCDNumber*> list;
+    QString tempStr;
+
+    if(!m_isDataSet.value("OFFSET")
+            && !m_isDataSet.value("GAIN")
+            && !m_isDataSet.value("TEMP")) {
         return;
     }
-
-    QList<QLCDNumber*> list;
-    list << lcdSensorTemp;
-    QString tempStr;
-#ifdef DEBUG
-        qDebug() << "itsSensorsList.size() =" << itsSensorsList.size();
-#endif
-    for(int k = 0; k < list.size() && k < itsSensorsList.size(); ++k) {
-        tempStr = itsSensorsList.at(itsSensorsList.size() - 1 - k);
-
-        if(list.at(k)->digitCount() < addTrailingZeros(tempStr, PRECISION).size())
-        {
-            list[k]->display("ERR"); // Overflow
-        } else {
-            list[k]->display(addTrailingZeros(tempStr, PRECISION));
-        }
-
-        setColorLCD(list[k], tempStr.toDouble() > 0.0);
-#ifdef DEBUG
-        qDebug() << "itsSensorsList.size() =" << itsSensorsList.size();
-        qDebug() << "Temperature[" << k << "] =" << list.at(k)->value();
-#endif
+    if(m_isDataSet.value("OFFSET")) {
+        list.insert("OFFSET", m_lcdOffset);
+    }
+    if(m_isDataSet.value("GAIN")) {
+        list.insert("GAIN", m_lcdGain);
+    }
+    if(m_isDataSet.value("TEMP")) {
+        list.insert("TEMP", m_lcdTemp);
     }
 
-    itsSensorsList.clear();
+    foreach (QString key, m_DisplayList.keys()) {
+        if(list.contains(key)) {
+            tempStr = m_DisplayList.value(key);
+
+            if(key != "TEMP") {
+#undef PRECISION
+#define PRECISION 0
+            } else {
+                setColorLCD(list.value(key), tempStr.toDouble() > 0.0);
+            }
+
+            if(list.value(key)->digitCount() < addTrailingZeros(tempStr, PRECISION).size())
+            {
+                list[key]->display("ERR"); // Overflow
+            } else {
+                list[key]->display(addTrailingZeros(tempStr, PRECISION));
+            }
+        }
+    }
+
+    m_DisplayList.clear();
 }
 
-void Dialog::displayDP()
+void Dialog::initIsDataSet()
 {
-#ifdef DEBUG
-    qDebug() << "void Dialog::displayDP()";
-#endif
-    itsTimeToDisplay->stop();
-
-    QString tempStr;
-    QStringList DPList;
-
-    QList<QLCDNumber*> list;
-
-    if(m_isDP1Set) {
-        list << lcdDP1;
-        DPList << itsDP1;
-    }
-    if(m_isDp2Set) {
-        list << lcdDP2;
-        DPList  << itsDP2;
-    }
-    if(!m_isDP1Set && !m_isDp2Set) {
-        return;
-    }
-
-#ifdef DEBUG
-    qDebug() << "itsDPList.size() =" << DPList.size();
-#endif
-    for(int k = 0; k < list.size() && k < DPList.size(); ++k) {
-        tempStr = DPList.at(k);
-
-        if(list.at(k)->digitCount() < tempStr.size())
-        {
-            list[k]->display("ERR"); // Overflow
-        } else {
-            list[k]->display(tempStr);
-        }
-#ifdef DEBUG
-        qDebug() << "DPList.size() =" << DPList.size();
-        qDebug() << "DP[" << k << "] =" << list.at(k)->value();
-#endif
-    }
-//    for(int k = 0; k < list.size() && k < DPList.size(); ++k) {
-//        tempStr = DPList.at(DPList.size() - 1 - k);
-
-//        if(list.at(k)->digitCount() < tempStr.size())
-//        {
-//            list[k]->display("ERR"); // Overflow
-//        } else {
-//            list[k]->display(tempStr);
-//        }
-//#ifdef DEBUG
-//        qDebug() << "DPList.size() =" << DPList.size();
-//        qDebug() << "DP[" << k << "] =" << list.at(k)->value();
-//#endif
-//    }
-}
-
-void Dialog::colorSetTempLCD()
-{
-//    setColorLCD(dynamic_cast<QLCDNumber*>(sbSetTemp->spinWidget()), sbSetTemp->value() > 0);
+    m_isDataSet.insert("OFFSET", false);
+    m_isDataSet.insert("GAIN", false);
+    m_isDataSet.insert("TEMP", false);
 }

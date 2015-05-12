@@ -18,7 +18,6 @@
 #include "ComPort.h"
 #include "IProtocol.h"
 #include "RRMProtocol.h"
-#include "ISpinBox.h"
 
 class Dialog : public QDialog
 {
@@ -26,8 +25,8 @@ class Dialog : public QDialog
 
     enum CODE {
         WRITE,
-        DP1,
-        DP2,
+        OFFSET,
+        GAIN,
         TEMP,
         CALIBR
     };
@@ -41,27 +40,24 @@ class Dialog : public QDialog
     QLabel *lTx;
     QLabel *lRx;
 
-//    ISpinBox *sbSetDP1;
-//    ISpinBox *sbSetDP2;
-//    ISpinBox *sbSetTemp;
-    QSpinBox *sbSetDP1;
-    QSpinBox *sbSetDP2;
+    QSpinBox *sbSetOffset;
+    QSpinBox *sbSetGain;
     QSpinBox *sbSetTemp;
 
-    QLCDNumber *lcdDP1;
-    QLCDNumber *lcdDP2;
-    QLCDNumber *lcdSensorTemp;
+    QLCDNumber *m_lcdOffset;
+    QLCDNumber *m_lcdGain;
+    QLCDNumber *m_lcdTemp;
 
-    QLabel *lDP1;
-    QLabel *lDP2;
-    QLabel *lSensor;
+    QLabel *lOffset;
+    QLabel *lGain;
+    QLabel *lTemp;
 
-    QPushButton *bSetDP1;
-    QPushButton *bSetDP2;
+    QPushButton *bSetOffset;
+    QPushButton *bSetGain;
     QPushButton *bSetTemp;
 
-    QGroupBox *gbSetDP1;
-    QGroupBox *gbSetDP2;
+    QGroupBox *gbSetOffset;
+    QGroupBox *gbSetGain;
     QGroupBox *gbSetTemp;
     QGroupBox *gbConfig;
     QGroupBox *gbInfo;
@@ -69,50 +65,46 @@ class Dialog : public QDialog
     QPushButton *bWrite;
     QPushButton *bCalibr;
 
-    QSerialPort *itsPort;
-    ComPort *itsComPort;
-    IProtocol *itsProtocol;
+    QSerialPort *m_Port;
+    ComPort *m_ComPort;
+    IProtocol *m_Protocol;
 
-    QStringList itsSensorsList;
-    QString itsDP1;
-    QString itsDP2;
+    QMap<QString, QString> m_DisplayList;
 
-    // цвет индикации температуры >0 & <=0
+    // Color of indication of temperature >0 & <=0
     void setColorLCD(QLCDNumber *lcd, bool isHeat);
-    // добавляет завершающие нули
+    // Reset QLCDNumber color to default
+    void defaultColorLCD(QLCDNumber *lcd);
+    // Add trailing zeros
     QString &addTrailingZeros(QString &str, int prec);
 
     void write(const CODE &code);
 
-    QTimer *itsBlinkTimeTxNone;
-    QTimer *itsBlinkTimeRxNone;
-    QTimer *itsBlinkTimeTxColor;
-    QTimer *itsBlinkTimeRxColor;
-    QTimer *itsTimeToDisplay;
+    QTimer *m_BlinkTimeTxNone;
+    QTimer *m_BlinkTimeRxNone;
+    QTimer *m_BlinkTimeTxColor;
+    QTimer *m_BlinkTimeRxColor;
+    QTimer *m_TimeToDisplay;
 
-    bool m_isDP1Set;
-    bool m_isDp2Set;
-    bool m_isTempSet;
+    QMap<QString, bool> m_isDataSet;
+    void initIsDataSet();
 
 private slots:
     void openPort();
     void closePort();
     void received(bool isReceived);
-    void writeDP1();
-    void writeDP2();
+    void writeOffset();
+    void writeGain();
     void writeTemp();
     void calibrate();
     void writePermanently();
-    // мигание надписей "Rx" - при получении и "Tx" - при отправке пакета
+    // Blinking labels "Rx" - at receiving and "Tx" - at sending packet
     void colorTxNone();
     void colorRxNone();
     void colorIsTx();
     void colorIsRx();
     // display current Rx data
-    void displayTemp();
-    void displayDP();
-    // colored set temp LCD if value < 0
-    void colorSetTempLCD();
+    void displayData();
 public:
     explicit Dialog(QWidget *parent = 0);
     ~Dialog();

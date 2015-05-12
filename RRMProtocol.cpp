@@ -12,8 +12,8 @@
 #define PRECISION 2
 
 #define CODE_WRITE 0x00
-#define CODE_DP1 0x01
-#define CODE_DP2 0x02
+#define CODE_OFFSET 0x01
+#define CODE_GAIN 0x02
 #define CODE_TEMP 0x03
 #define CODE_CALIBR 0x04
 
@@ -41,32 +41,33 @@ RRMProtocol::RRMProtocol(ComPort *comPort, QObject *parent) :
 
 void RRMProtocol::setDataToWrite(const QMultiMap<QString, QString> &data)
 {
-    itsWriteData = data;
+    m_WriteData = data;
 }
 
 QMultiMap<QString, QString> RRMProtocol::getReadedData() const
 {
-    return itsReadData;
+    return m_ReadData;
 }
 
 void RRMProtocol::readData(bool isReaded)
 {
-    itsReadData.clear();
+    m_ReadData.clear();
 
     if(isReaded) {
         QByteArray ba;
 
         ba = itsComPort->getReadData();
 
-        itsReadData.insert(QString("CODE"), QString::number(static_cast<int>(ba.at(1))));
+        m_ReadData.insert(QString("CODE"), QString::number(static_cast<int>(ba.at(1))));
 
         if( static_cast<int>(ba.at(1)) < 0x10 ) {
 
-            itsReadData.insert(QString("DP1"),
+            m_ReadData.remove(QString("CODE"));
+            m_ReadData.insert(QString("OFFSET"),
                                QString::number(wordToInt(ba.mid(1, 2))));
-            itsReadData.insert(QString("DP2"),
+            m_ReadData.insert(QString("GAIN"),
                                QString::number(wordToInt(ba.mid(3, 2))));
-            itsReadData.insert(QString("TEMP"),
+            m_ReadData.insert(QString("TEMP"),
                                QString::number(sensorTemp(wordToInt(ba.mid(5, 2))), FORMAT, PRECISION));
 
         } else {
@@ -123,13 +124,13 @@ void RRMProtocol::writeData()
     QByteArray ba;
 
     ba.append(STARTBYTE);
-    ba.append(itsWriteData.value("CODE").toInt());
+    ba.append(m_WriteData.value("CODE").toInt());
 
-    if( itsWriteData.value("CODE").toInt() != CODE_WRITE
-            && itsWriteData.value("CODE").toInt() != CODE_CALIBR ) {
+    if( m_WriteData.value("CODE").toInt() != CODE_WRITE
+            && m_WriteData.value("CODE").toInt() != CODE_CALIBR ) {
 
-        ba.append(intToByteArray(itsWriteData.value("DATA").toInt(), 2).at(0));
-        ba.append(intToByteArray(itsWriteData.value("DATA").toInt(), 2).at(1));
+        ba.append(intToByteArray(m_WriteData.value("DATA").toInt(), 2).at(0));
+        ba.append(intToByteArray(m_WriteData.value("DATA").toInt(), 2).at(1));
 
     } else {
 
@@ -143,12 +144,6 @@ void RRMProtocol::writeData()
     ba.append(STOPBYTE);
 
     itsComPort->setWriteData(ba);
-#ifdef DEBUG
-    qDebug() << "write";
-    for(int i = 0; i < ba.size(); ++i) {
-        qDebug() << "ba =" << (int)ba.at(i);
-    }
-#endif
     itsComPort->writeData();
 }
 
@@ -157,7 +152,6 @@ void RRMProtocol::resetProtocol()
     // TODO
 }
 
-// преобразует word в byte
 int RRMProtocol::wordToInt(QByteArray ba)
 {
     if(ba.size() != 2)
@@ -184,7 +178,6 @@ int RRMProtocol::wordToInt(QByteArray ba)
     return temp;
 }
 
-// определяет температуру
 double RRMProtocol::sensorTemp(const int &ADC16)
 {
     double temp = 0.01 * ( (-1.5)*m_calibrCoeffs.at(0) + ADC16*0.0001 *
