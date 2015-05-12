@@ -88,7 +88,10 @@ Dialog::Dialog(QWidget *parent) :
         itsBlinkTimeRxNone(new QTimer(this)),
         itsBlinkTimeTxColor(new QTimer(this)),
         itsBlinkTimeRxColor(new QTimer(this)),
-        itsTimeToDisplay(new QTimer(this))
+        itsTimeToDisplay(new QTimer(this)),
+        m_isDP1Set(false),
+        m_isDp2Set(false),
+        m_isTempSet(false)
 {
 //    dynamic_cast<QPushButton *>( sbSetDP1->buttonUpWidget() )->setMaximumSize(20, 20);
 //    dynamic_cast<QPushButton *>( sbSetDP1->buttonDownWidget() )->setMaximumSize(20, 20);
@@ -249,6 +252,7 @@ Dialog::Dialog(QWidget *parent) :
         lcd->setMaximumSize(80, 25);
         lcd->setSegmentStyle(QLCDNumber::Flat);
         lcd->setFrameStyle(QFrame::NoFrame);
+        lcd->display("----");
     }
 
     colorSetTempLCD();
@@ -256,6 +260,7 @@ Dialog::Dialog(QWidget *parent) :
     lcdDP1->setDigitCount(DP1_DIGITS);
     lcdDP2->setDigitCount(DP2_DIGITS);
     lcdSensorTemp->setDigitCount(TEMP_DIGITS);
+    lcdSensorTemp->display("---.--");
 
     connect(bPortStart, SIGNAL(clicked()), this, SLOT(openPort()));
     connect(bPortStop, SIGNAL(clicked()), this, SLOT(closePort()));
@@ -341,6 +346,27 @@ void Dialog::closePort()
     bPortStop->setEnabled(false);
     bPortStart->setEnabled(true);
     itsProtocol->resetProtocol();
+
+    m_isDP1Set = false;
+    m_isDp2Set = false;
+    m_isTempSet = false;
+    lcdDP1->display("----");
+    lcdDP2->display("----");
+    lcdSensorTemp->display("---.--");
+
+    QPalette palette;
+    // get the palette
+    palette = lcdSensorTemp->palette();
+
+    // foreground color
+    palette.setColor(palette.WindowText, QColor(0, 0, 0));
+    // "light" border
+    palette.setColor(palette.Light, QColor(0, 0, 0));
+    // "dark" border
+    palette.setColor(palette.Dark, QColor(0, 0, 0));
+
+    // set the palette
+    lcdSensorTemp->setPalette(palette);
 }
 
 void Dialog::received(bool isReceived)
@@ -392,14 +418,17 @@ void Dialog::write(const Dialog::CODE &code)
         case 1:
             codeStr = QString::number(CODE_DP1);
             data = QString::number(sbSetDP1->value());
+            m_isDP1Set = true;
             break;
         case 2:
             codeStr = QString::number(CODE_DP2);
             data = QString::number(sbSetDP2->value());
+            m_isDp2Set = true;
             break;
         case 3:
             codeStr = QString::number(CODE_TEMP);
             data = QString::number(sbSetTemp->value());
+            m_isTempSet = true;
             break;
         case 4:
             codeStr = QString::number(CODE_CALIBR);
@@ -518,6 +547,10 @@ void Dialog::displayTemp()
 #endif
     itsTimeToDisplay->stop();
 
+    if(!m_isTempSet) {
+        return;
+    }
+
     QList<QLCDNumber*> list;
     list << lcdSensorTemp;
     QString tempStr;
@@ -551,16 +584,28 @@ void Dialog::displayDP()
 #endif
     itsTimeToDisplay->stop();
 
-    QList<QLCDNumber*> list;
-    list << lcdDP2 << lcdDP1;
     QString tempStr;
     QStringList DPList;
-    DPList << itsDP1 << itsDP2;
+
+    QList<QLCDNumber*> list;
+
+    if(m_isDP1Set) {
+        list << lcdDP1;
+        DPList << itsDP1;
+    }
+    if(m_isDp2Set) {
+        list << lcdDP2;
+        DPList  << itsDP2;
+    }
+    if(!m_isDP1Set && !m_isDp2Set) {
+        return;
+    }
+
 #ifdef DEBUG
-        qDebug() << "itsDPList.size() =" << DPList.size();
+    qDebug() << "itsDPList.size() =" << DPList.size();
 #endif
     for(int k = 0; k < list.size() && k < DPList.size(); ++k) {
-        tempStr = DPList.at(DPList.size() - 1 - k);
+        tempStr = DPList.at(k);
 
         if(list.at(k)->digitCount() < tempStr.size())
         {
@@ -573,6 +618,20 @@ void Dialog::displayDP()
         qDebug() << "DP[" << k << "] =" << list.at(k)->value();
 #endif
     }
+//    for(int k = 0; k < list.size() && k < DPList.size(); ++k) {
+//        tempStr = DPList.at(DPList.size() - 1 - k);
+
+//        if(list.at(k)->digitCount() < tempStr.size())
+//        {
+//            list[k]->display("ERR"); // Overflow
+//        } else {
+//            list[k]->display(tempStr);
+//        }
+//#ifdef DEBUG
+//        qDebug() << "DPList.size() =" << DPList.size();
+//        qDebug() << "DP[" << k << "] =" << list.at(k)->value();
+//#endif
+//    }
 }
 
 void Dialog::colorSetTempLCD()

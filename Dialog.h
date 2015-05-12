@@ -90,6 +90,10 @@ class Dialog : public QDialog
     QTimer *itsBlinkTimeRxColor;
     QTimer *itsTimeToDisplay;
 
+    bool m_isDP1Set;
+    bool m_isDp2Set;
+    bool m_isTempSet;
+
 private slots:
     void openPort();
     void closePort();
