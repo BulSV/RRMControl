@@ -65,9 +65,9 @@ void RRMProtocol::readData(bool isReaded)
             m_ReadData.remove(QString("CODE"));
             m_ReadData.insert(QString("OFFSET"),
                                QString::number(wordToInt(ba.mid(1, 2))));
-            m_ReadData.insert(QString("GAIN"),
-                               QString::number(wordToInt(ba.mid(3, 2))));
-            m_ReadData.insert(QString("TEMP"),
+            m_ReadData.insert(QString("SENS1"),
+                               QString::number(sensorTemp(wordToInt(ba.mid(3, 2))), FORMAT, PRECISION));
+            m_ReadData.insert(QString("SENS2"),
                                QString::number(sensorTemp(wordToInt(ba.mid(5, 2))), FORMAT, PRECISION));
 
         } else {

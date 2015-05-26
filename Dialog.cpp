@@ -58,8 +58,8 @@ Dialog::Dialog(QWidget *parent) :
         m_lcdGain(new QLCDNumber(this)),
         m_lcdTemp(new QLCDNumber(this)),
         lOffset(new QLabel(QString::fromUtf8("Offset:"), this)),
-        lGain(new QLabel(QString::fromUtf8("Gain:"), this)),
-        lTemp(new QLabel(QString::fromUtf8("Sensor, °C:"), this)),
+        lGain(new QLabel(QString::fromUtf8("Sensor1, °C:"), this)),
+        lTemp(new QLabel(QString::fromUtf8("Sensor2, °C:"), this)),
         bSetOffset(new QPushButton(QString::fromUtf8("Set"), this)),
         bSetGain(new QPushButton(QString::fromUtf8("Set"), this)),
         bSetTemp(new QPushButton(QString::fromUtf8("Set"), this)),
@@ -226,7 +226,8 @@ Dialog::Dialog(QWidget *parent) :
     }
 
     m_lcdOffset->setDigitCount(OFFSET_DIGITS);
-    m_lcdGain->setDigitCount(GAIN_DIGITS);
+    m_lcdGain->setDigitCount(TEMP_DIGITS);
+    m_lcdGain->display("---.--");
     m_lcdTemp->setDigitCount(TEMP_DIGITS);
     m_lcdTemp->display("---.--");
 
@@ -331,7 +332,7 @@ void Dialog::closePort()
 
     initIsDataSet();
     m_lcdOffset->display("----");
-    m_lcdGain->display("----");
+    m_lcdGain->display("---.--");
     m_lcdTemp->display("---.--");
 
     QList<QLCDNumber*> lcdList = QList<QLCDNumber*>() << m_lcdOffset << m_lcdGain << m_lcdTemp;
@@ -352,7 +353,7 @@ void Dialog::received(bool isReceived)
             m_TimeToDisplay->start();
         }
 
-        m_DisplayList = m_Protocol->getReadedData();        
+        m_DisplayList = m_Protocol->getReadedData();
     }
 }
 
@@ -387,7 +388,8 @@ void Dialog::write(const Dialog::CODE &code)
         case 3:
             codeStr = QString::number(CODE_TEMP);
             data = QString::number(sbSetTemp->value());
-            m_isDataSet.insert("TEMP", true);
+            m_isDataSet.insert("SENS1", true);
+            m_isDataSet.insert("SENS2", true);
             break;
         case 4:
             codeStr = QString::number(CODE_CALIBR);
@@ -507,25 +509,25 @@ void Dialog::displayData()
     QString tempStr;
 
     if(!m_isDataSet.value("OFFSET")
-            && !m_isDataSet.value("GAIN")
-            && !m_isDataSet.value("TEMP")) {
+            && !m_isDataSet.value("SENS1")
+            && !m_isDataSet.value("SENS2")) {
         return;
     }
     if(m_isDataSet.value("OFFSET")) {
         list.insert("OFFSET", m_lcdOffset);
     }
-    if(m_isDataSet.value("GAIN")) {
-        list.insert("GAIN", m_lcdGain);
+    if(m_isDataSet.value("SENS1")) {
+        list.insert("SENS1", m_lcdGain);
     }
-    if(m_isDataSet.value("TEMP")) {
-        list.insert("TEMP", m_lcdTemp);
+    if(m_isDataSet.value("SENS2")) {
+        list.insert("SENS2", m_lcdTemp);
     }
 
     foreach (QString key, m_DisplayList.keys()) {
         if(list.contains(key)) {
             tempStr = m_DisplayList.value(key);
 
-            if(key != "TEMP") {
+            if(key != "SENS1" && key != "SENS2") {
 #undef PRECISION
 #define PRECISION 0
             } else {
@@ -547,6 +549,6 @@ void Dialog::displayData()
 void Dialog::initIsDataSet()
 {
     m_isDataSet.insert("OFFSET", false);
-    m_isDataSet.insert("GAIN", false);
-    m_isDataSet.insert("TEMP", false);
+    m_isDataSet.insert("SENS1", false);
+    m_isDataSet.insert("SENS2", false);
 }
